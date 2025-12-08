@@ -227,8 +227,8 @@ export const OperatorHome: React.FC<OperatorHomeProps> = ({ user, onLogout, onEn
 
       </div>
 
-      {activeModal === 'OPEN' && <OpenBoxModal userId={user.id} onClose={() => setActiveModal(null)} onSuccess={handleOpenSession} />}
-      {activeModal === 'FUND' && activeSession && <AddFundModal sessionId={activeSession.id} onClose={() => setActiveModal(null)} />}
+      {activeModal === 'OPEN' && <OpenBoxModal userId={user.id} tenantId={user.tenantId} onClose={() => setActiveModal(null)} onSuccess={handleOpenSession} />}
+      {activeModal === 'FUND' && activeSession && <AddFundModal sessionId={activeSession.id} tenantId={user.tenantId} onClose={() => setActiveModal(null)} />}
       {activeModal === 'TOTALS' && activeSession && (
         <RegisterTotalsModal
           session={activeSession}

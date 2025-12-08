@@ -10,6 +10,7 @@ import { OperatorHome } from './components/OperatorHome';
 import { AdminUsers } from './components/AdminUsers';
 import { CashManagement } from './components/CashManagement';
 import { ProfileModal } from './components/ProfileModal';
+import { RegisterTenant } from './components/RegisterTenant';
 import { Product, Sale, ViewState, User } from './types';
 import { SupabaseService } from './services/supabaseService';
 import { GeminiService } from './services/geminiService';
@@ -31,10 +32,13 @@ const App: React.FC = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const loadData = async () => {
+    if (!user?.tenantId) return;
+
     try {
+      setLoading(true);
       const [productsData, salesData] = await Promise.all([
-        SupabaseService.getProducts(),
-        SupabaseService.getSales()
+        SupabaseService.getProducts(user.tenantId),
+        SupabaseService.getSales(user.tenantId)
       ]);
       setProducts(productsData);
       setSales(salesData);
@@ -45,13 +49,21 @@ const App: React.FC = () => {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    if (user) {
+      loadData();
+    } else {
+      setLoading(false);
+    }
+  }, [user]); // Dependencies updated to 'user'
 
   // Sync URL with view state
   useEffect(() => {
     const path = location.pathname;
     if (path === '/' || path === '/login') {
       setView('LOGIN');
+    } else if (path === '/register') {
+      setView('REGISTER');
     } else if (path === '/dashboard') {
       setView('DASHBOARD');
     } else if (path === '/inventory') {
@@ -83,11 +95,16 @@ const App: React.FC = () => {
   };
 
   const handleProductUpdate = async (product: Product, isNew: boolean = false) => {
+    if (!user?.tenantId) return;
+
     try {
+      // Ensure product has tenantId
+      const productWithTenant = { ...product, tenantId: user.tenantId };
+
       if (isNew) {
-        await SupabaseService.addProduct(product);
+        await SupabaseService.addProduct(productWithTenant);
       } else {
-        await SupabaseService.updateProduct(product);
+        await SupabaseService.updateProduct(productWithTenant);
       }
       // Reload to ensure consistency
       await loadData();
@@ -115,6 +132,7 @@ const App: React.FC = () => {
     // Update URL based on view
     const pathMap: Record<ViewState, string> = {
       'LOGIN': '/login',
+      'REGISTER': '/register',
       'DASHBOARD': '/dashboard',
       'INVENTORY': '/inventory',
       'HISTORY': '/history',
@@ -160,8 +178,29 @@ const App: React.FC = () => {
 
   if (loading) return <div className="flex h-screen items-center justify-center text-violet-500 font-bold bg-[#F3F5F9]">Carregando sistema...</div>;
 
+  if (view === 'REGISTER') {
+    return (
+      <RegisterTenant
+        onBack={() => { setView('LOGIN'); navigate('/login'); }}
+        onRegisterSuccess={() => {
+          setView('LOGIN');
+          navigate('/login');
+          alert('Conta criada com sucesso! Por favor, faça login.');
+        }}
+      />
+    );
+  }
+
   if (!user || view === 'LOGIN') {
-    return <Login onLogin={handleLogin} />;
+    return (
+      <Login
+        onLogin={handleLogin}
+        onRegister={() => {
+          setView('REGISTER');
+          navigate('/register');
+        }}
+      />
+    );
   }
 
   if (view === 'POS') {
@@ -198,9 +237,9 @@ const App: React.FC = () => {
       <main className="flex-1 overflow-y-auto overflow-x-hidden p-2 relative scroll-smooth">
         {view === 'DASHBOARD' && <Dashboard sales={sales} products={products} onViewLowStock={handleViewLowStock} />}
         {view === 'INVENTORY' && <Inventory products={products} onUpdate={handleProductUpdate} onDelete={handleProductDelete} initialFilterLowStock={highlightLowStock} />}
-        {view === 'HISTORY' && <SalesHistory sales={sales} />}
-        {view === 'USERS' && <AdminUsers />}
-        {view === 'CASH_MANAGEMENT' && <CashManagement />}
+        {view === 'HISTORY' && <SalesHistory sales={sales} user={user} />}
+        {view === 'USERS' && <AdminUsers user={user} />}
+        {view === 'CASH_MANAGEMENT' && <CashManagement user={user} />}
       </main>
 
       {/* Profile Modal */}

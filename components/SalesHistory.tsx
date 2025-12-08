@@ -1,15 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Sale } from '../types';
+import { Sale, User } from '../types';
 import { SupabaseService } from '../services/supabaseService';
 import { Calendar, CreditCard, ChevronDown, ChevronUp, User as UserIcon, Download, FileText, Filter } from 'lucide-react';
 
 interface HistoryProps {
   sales: Sale[];
+  user: User;
 }
 
 type Period = 'TODAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'ALL';
 
-export const SalesHistory: React.FC<HistoryProps> = ({ sales }) => {
+export const SalesHistory: React.FC<HistoryProps> = ({ sales, user }) => {
   const [expandedSale, setExpandedSale] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>('TODAY');
   const [users, setUsers] = useState<any[]>([]);
@@ -17,14 +18,15 @@ export const SalesHistory: React.FC<HistoryProps> = ({ sales }) => {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const usersData = await SupabaseService.getUsers();
+        if (!user?.tenantId) return;
+        const usersData = await SupabaseService.getUsers(user.tenantId);
         setUsers(usersData);
       } catch (error) {
         console.error('Error loading users:', error);
       }
     };
     loadUsers();
-  }, []);
+  }, [user]);
 
   const getUserName = (userId: string | null) => {
     if (!userId) return 'Usuário Removido';

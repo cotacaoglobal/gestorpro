@@ -4,13 +4,13 @@ import { CashSession, PaymentMethod } from '../types';
 import { X, Printer, Check } from 'lucide-react';
 
 // --- OPEN BOX MODAL ---
-export const OpenBoxModal = ({ userId, onClose, onSuccess }: any) => {
+export const OpenBoxModal = ({ userId, tenantId, onClose, onSuccess }: any) => {
   const [fund, setFund] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const session = await SupabaseService.openSession(userId, Number(fund));
+      const session = await SupabaseService.openSession(userId, tenantId, Number(fund));
       onSuccess(session.id);
     } catch (error) {
       console.error('Error opening session:', error);
@@ -48,7 +48,7 @@ export const OpenBoxModal = ({ userId, onClose, onSuccess }: any) => {
 };
 
 // --- ADD FUND MODAL ---
-export const AddFundModal = ({ sessionId, onClose }: any) => {
+export const AddFundModal = ({ sessionId, tenantId, onClose }: any) => {
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
 
@@ -57,6 +57,7 @@ export const AddFundModal = ({ sessionId, onClose }: any) => {
     try {
       await SupabaseService.addCashMovement({
         id: crypto.randomUUID(),
+        tenantId,
         sessionId,
         type: 'ADD_FUND',
         amount: Number(amount),

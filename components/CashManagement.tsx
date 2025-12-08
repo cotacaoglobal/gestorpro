@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { SupabaseService } from '../services/supabaseService';
-import { DollarSign, TrendingUp, AlertCircle, CheckCircle, Search, Calendar, Filter, User, X } from 'lucide-react';
-import { CashSession } from '../types';
+import { DollarSign, TrendingUp, AlertCircle, CheckCircle, Search, Calendar, Filter, User as UserIcon, X } from 'lucide-react';
+import { CashSession, User } from '../types';
 import { SessionDetailsModal, CloseSessionModal } from './CashManagementModals';
 
-interface CashManagementProps { }
+interface CashManagementProps {
+    user: User; // Add user prop
+}
 
-export const CashManagement: React.FC<CashManagementProps> = () => {
+export const CashManagement: React.FC<CashManagementProps> = ({ user }) => {
     const [sessions, setSessions] = useState<CashSession[]>([]);
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -21,17 +23,20 @@ export const CashManagement: React.FC<CashManagementProps> = () => {
     const [closingSessionId, setClosingSessionId] = useState<string | null>(null);
 
     useEffect(() => {
-        loadData();
-        const interval = setInterval(loadData, 30000); // 30s auto-refresh
-        return () => clearInterval(interval);
-    }, []);
+        if (user?.tenantId) {
+            loadData();
+            const interval = setInterval(loadData, 30000); // 30s auto-refresh
+            return () => clearInterval(interval);
+        }
+    }, [user]);
 
     const loadData = async () => {
+        if (!user?.tenantId) return;
         setLoading(true);
         try {
             const [sessionsData, usersData] = await Promise.all([
-                SupabaseService.getSessions(),
-                SupabaseService.getUsers()
+                SupabaseService.getSessions(user.tenantId),
+                SupabaseService.getUsers(user.tenantId)
             ]);
             setSessions(sessionsData);
             setUsers(usersData);
@@ -163,7 +168,7 @@ export const CashManagement: React.FC<CashManagementProps> = () => {
 
                     {/* Operator Select */}
                     <div className="relative">
-                        <User size={16} className="absolute left-3 top-3 text-slate-400" />
+                        <UserIcon size={16} className="absolute left-3 top-3 text-slate-400" />
                         <select
                             value={operatorFilter}
                             onChange={(e) => setOperatorFilter(e.target.value)}
@@ -282,6 +287,7 @@ export const CashManagement: React.FC<CashManagementProps> = () => {
             {detailsSessionId && (
                 <SessionDetailsModal
                     sessionId={detailsSessionId}
+                    tenantId={user.tenantId}
                     onClose={() => setDetailsSessionId(null)}
                 />
             )}
@@ -289,6 +295,7 @@ export const CashManagement: React.FC<CashManagementProps> = () => {
             {closingSessionId && (
                 <CloseSessionModal
                     sessionId={closingSessionId}
+                    tenantId={user.tenantId}
                     onClose={() => setClosingSessionId(null)}
                     onConfirm={handleCloseSession}
                 />

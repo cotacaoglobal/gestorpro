@@ -1,5 +1,14 @@
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  plan: 'free' | 'pro' | 'enterprise';
+  status: 'active' | 'suspended' | 'cancelled';
+}
+
 export interface Product {
   id: string;
+  tenantId: string; // Multi-tenancy
   name: string;
   category: string;
   internalCode: string;
@@ -14,6 +23,7 @@ export interface Product {
 
 export interface CartItem extends Product {
   quantity: number;
+  // Sale-specific overrides if needed (e.g. discount)
 }
 
 export enum PaymentMethod {
@@ -30,6 +40,7 @@ export interface SalePayment {
 
 export interface Sale {
   id: string;
+  tenantId: string; // Multi-tenancy
   sessionId?: string; // Link sale to a session
   userId: string; // Link sale to the user who made it
   customerName: string; // Customer for this specific sale
@@ -51,6 +62,7 @@ export type Role = 'admin' | 'operator';
 
 export interface User {
   id: string;
+  tenantId: string; // Multi-tenancy
   name: string;
   email: string;
   passwordHash: string; // Simplified for demo
@@ -60,6 +72,7 @@ export interface User {
 
 export interface CashMovement {
   id: string;
+  tenantId: string; // Multi-tenancy
   sessionId: string;
   type: 'OPENING' | 'ADD_FUND' | 'WITHDRAW' | 'CLOSING';
   amount: number;
@@ -69,6 +82,7 @@ export interface CashMovement {
 
 export interface CashSession {
   id: string;
+  tenantId: string; // Multi-tenancy
   openedByUserId: string;
   // Session is now a shift, not a single customer transaction
   customerName?: string;
@@ -82,4 +96,4 @@ export interface CashSession {
   };
 }
 
-export type ViewState = 'LOGIN' | 'DASHBOARD' | 'INVENTORY' | 'POS' | 'HISTORY' | 'USERS' | 'OPERATOR_HOME' | 'CASH_MANAGEMENT';
+export type ViewState = 'LOGIN' | 'REGISTER' | 'DASHBOARD' | 'INVENTORY' | 'POS' | 'HISTORY' | 'USERS' | 'OPERATOR_HOME' | 'CASH_MANAGEMENT';

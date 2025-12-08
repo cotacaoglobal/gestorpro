@@ -5,9 +5,10 @@ import { Lock, Mail, ArrowRight, Disc, X, CheckCircle2, TrendingUp, Package, Bar
 
 interface LoginProps {
   onLogin: (user: User) => void;
+  onRegister: () => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ onLogin }) => {
+export const Login: React.FC<LoginProps> = ({ onLogin, onRegister }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -33,13 +34,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const handlePasswordRecovery = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Verificar se o email existe e é admin
-      const users = await SupabaseService.getUsers();
-      const user = users.find(u => u.email === recoveryEmail && u.role === 'admin');
-
-      if (user) {
-        // Aqui você implementaria o envio de email real
-        // Por enquanto, apenas simulamos o sucesso
+      // Mock simulation of success for now
+      // In a real multi-tenant system, we'd need a dedicated endpoint to check user by email globally safely
+      if (recoveryEmail && recoveryEmail.includes('@')) {
         setRecoverySuccess(true);
         setTimeout(() => {
           setShowRecoveryModal(false);
@@ -47,7 +44,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           setRecoveryEmail('');
         }, 3000);
       } else {
-        alert('Email não encontrado ou não é um administrador.');
+        alert('Por favor, insira um email válido.');
       }
     } catch (error) {
       console.error('Recovery error:', error);
@@ -169,14 +166,25 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
               Acessar Sistema <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </button>
 
-            <div className="text-center pt-4">
+            <div className="text-center pt-4 space-y-4">
               <button
                 type="button"
                 onClick={() => setShowRecoveryModal(true)}
-                className="text-sm text-violet-600 hover:text-violet-700 font-semibold hover:underline"
+                className="text-sm text-slate-500 hover:text-violet-600 transition-colors"
               >
                 Esqueceu a senha?
               </button>
+
+              <div className="pt-4 border-t border-slate-100">
+                <p className="text-sm text-slate-500 mb-2">Ainda não tem uma conta?</p>
+                <button
+                  type="button"
+                  onClick={onRegister}
+                  className="text-violet-600 font-bold hover:text-violet-700 hover:underline transition-colors"
+                >
+                  Criar conta para sua empresa
+                </button>
+              </div>
             </div>
           </form>
         </div>

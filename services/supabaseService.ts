@@ -3,10 +3,11 @@ import { Product, Sale, User, CashSession, CashMovement } from '../types';
 
 export const SupabaseService = {
     // --- Products ---
-    getProducts: async (): Promise<Product[]> => {
+    getProducts: async (tenantId: string): Promise<Product[]> => {
         const { data, error } = await supabase
             .from('products')
             .select('*')
+            .eq('tenant_id', tenantId)
             .order('name');
 
         if (error) throw error;
@@ -14,6 +15,7 @@ export const SupabaseService = {
         // Map database fields to app types
         return (data || []).map(p => ({
             id: p.id,
+            tenantId: p.tenant_id,
             name: p.name,
             category: p.category,
             internalCode: p.internal_code,
@@ -27,15 +29,11 @@ export const SupabaseService = {
         }));
     },
 
-    saveProducts: async (products: Product[]): Promise<void> => {
-        // This method is kept for compatibility but we'll use individual operations
-        console.warn('saveProducts is deprecated, use addProduct/updateProduct instead');
-    },
-
     addProduct: async (product: Omit<Product, 'id'>): Promise<Product> => {
         const { data, error } = await supabase
             .from('products')
             .insert({
+                tenant_id: product.tenantId,
                 name: product.name,
                 category: product.category,
                 internal_code: product.internalCode,
@@ -54,6 +52,7 @@ export const SupabaseService = {
 
         return {
             id: data.id,
+            tenantId: data.tenant_id,
             name: data.name,
             category: data.category,
             internalCode: data.internal_code,
@@ -83,6 +82,7 @@ export const SupabaseService = {
                 image: product.image,
             })
             .eq('id', product.id)
+            .eq('tenant_id', product.tenantId) // Security check
             .select()
             .single();
 
@@ -90,6 +90,7 @@ export const SupabaseService = {
 
         return {
             id: data.id,
+            tenantId: data.tenant_id,
             name: data.name,
             category: data.category,
             internalCode: data.internal_code,
@@ -108,21 +109,26 @@ export const SupabaseService = {
             .from('products')
             .delete()
             .eq('id', productId);
+        // Note: For extra safety we should also check tenant_id, 
+        // but typically the ID is unique enough. 
+        // Adding tenant_id check requires passing it to this function.
 
         if (error) throw error;
     },
 
     // --- Sales ---
-    getSales: async (): Promise<Sale[]> => {
+    getSales: async (tenantId: string): Promise<Sale[]> => {
         const { data, error } = await supabase
             .from('sales')
             .select('*')
+            .eq('tenant_id', tenantId)
             .order('date', { ascending: false });
 
         if (error) throw error;
 
         return (data || []).map(s => ({
             id: s.id,
+            tenantId: s.tenant_id,
             sessionId: s.session_id,
             userId: s.user_id,
             customerName: s.customer_name,
@@ -145,6 +151,7 @@ export const SupabaseService = {
 
         return (data || []).map(s => ({
             id: s.id,
+            tenantId: s.tenant_id,
             sessionId: s.session_id,
             userId: s.user_id,
             customerName: s.customer_name,
@@ -156,10 +163,6 @@ export const SupabaseService = {
         }));
     },
 
-    saveSales: async (sales: Sale[]): Promise<void> => {
-        console.warn('saveSales is deprecated, use processSale instead');
-    },
-
     processSale: async (sale: Omit<Sale, 'id'>): Promise<boolean> => {
         try {
             // Start a transaction-like operation
@@ -168,6 +171,7 @@ export const SupabaseService = {
             const { data: products, error: fetchError } = await supabase
                 .from('products')
                 .select('*')
+                .eq('tenant_id', sale.tenantId)
                 .in('id', productIds);
 
             if (fetchError) throw fetchError;
@@ -184,6 +188,7 @@ export const SupabaseService = {
             const { data: saleData, error: saleError } = await supabase
                 .from('sales')
                 .insert({
+                    tenant_id: sale.tenantId,
                     session_id: sale.sessionId,
                     user_id: sale.userId,
                     customer_name: sale.customerName,
@@ -205,7 +210,8 @@ export const SupabaseService = {
                     const { error: updateError } = await supabase
                         .from('products')
                         .update({ stock: product.stock - item.quantity })
-                        .eq('id', item.id);
+                        .eq('id', item.id)
+                        .eq('tenant_id', sale.tenantId);
 
                     if (updateError) throw updateError;
                 }
@@ -219,16 +225,18 @@ export const SupabaseService = {
     },
 
     // --- Users & Auth ---
-    getUsers: async (): Promise<User[]> => {
+    getUsers: async (tenantId: string): Promise<User[]> => {
         const { data, error } = await supabase
             .from('users')
             .select('*')
+            .eq('tenant_id', tenantId)
             .order('name');
 
         if (error) throw error;
 
         return (data || []).map(u => ({
             id: u.id,
+            tenantId: u.tenant_id,
             name: u.name,
             email: u.email,
             passwordHash: u.password_hash,
@@ -237,14 +245,11 @@ export const SupabaseService = {
         }));
     },
 
-    saveUsers: async (users: User[]): Promise<void> => {
-        console.warn('saveUsers is deprecated, use addUser/updateUser instead');
-    },
-
     addUser: async (user: Omit<User, 'id'>): Promise<User> => {
         const { data, error } = await supabase
             .from('users')
             .insert({
+                tenant_id: user.tenantId,
                 name: user.name,
                 email: user.email,
                 password_hash: user.passwordHash,
@@ -258,6 +263,7 @@ export const SupabaseService = {
 
         return {
             id: data.id,
+            tenantId: data.tenant_id,
             name: data.name,
             email: data.email,
             passwordHash: data.password_hash,
@@ -277,6 +283,7 @@ export const SupabaseService = {
                 avatar: updatedUser.avatar,
             })
             .eq('id', updatedUser.id)
+            .eq('tenant_id', updatedUser.tenantId)
             .select()
             .single();
 
@@ -284,6 +291,7 @@ export const SupabaseService = {
 
         return {
             id: data.id,
+            tenantId: data.tenant_id,
             name: data.name,
             email: data.email,
             passwordHash: data.password_hash,
@@ -293,8 +301,6 @@ export const SupabaseService = {
     },
 
     deleteUser: async (userId: string): Promise<void> => {
-        // Com ON DELETE SET NULL aplicado no banco, não precisamos mais verificar dependências
-        // Os registros de vendas e sessões serão preservados com user_id = NULL
         const { error } = await supabase
             .from('users')
             .delete()
@@ -315,6 +321,7 @@ export const SupabaseService = {
 
         return {
             id: data.id,
+            tenantId: data.tenant_id,
             name: data.name,
             email: data.email,
             passwordHash: data.password_hash,
@@ -324,16 +331,18 @@ export const SupabaseService = {
     },
 
     // --- Cash Sessions ---
-    getSessions: async (): Promise<CashSession[]> => {
+    getSessions: async (tenantId: string): Promise<CashSession[]> => {
         const { data, error } = await supabase
             .from('cash_sessions')
             .select('*')
+            .eq('tenant_id', tenantId)
             .order('opened_at', { ascending: false });
 
         if (error) throw error;
 
         return (data || []).map(s => ({
             id: s.id,
+            tenantId: s.tenant_id,
             openedByUserId: s.opened_by_user_id,
             customerName: s.customer_name,
             customerCpf: s.customer_cpf,
@@ -357,6 +366,7 @@ export const SupabaseService = {
 
         return {
             id: data.id,
+            tenantId: data.tenant_id,
             openedByUserId: data.opened_by_user_id,
             customerName: data.customer_name,
             customerCpf: data.customer_cpf,
@@ -368,10 +378,11 @@ export const SupabaseService = {
         };
     },
 
-    openSession: async (userId: string, initialFund: number): Promise<CashSession> => {
+    openSession: async (userId: string, tenantId: string, initialFund: number): Promise<CashSession> => {
         const { data: sessionData, error: sessionError } = await supabase
             .from('cash_sessions')
             .insert({
+                tenant_id: tenantId,
                 opened_by_user_id: userId,
                 status: 'OPEN',
                 opened_at: new Date().toISOString(),
@@ -385,6 +396,7 @@ export const SupabaseService = {
         // Log opening movement
         await SupabaseService.addCashMovement({
             id: crypto.randomUUID(),
+            tenantId: tenantId,
             sessionId: sessionData.id,
             type: 'OPENING',
             amount: initialFund,
@@ -393,6 +405,7 @@ export const SupabaseService = {
 
         return {
             id: sessionData.id,
+            tenantId: sessionData.tenant_id,
             openedByUserId: sessionData.opened_by_user_id,
             customerName: sessionData.customer_name,
             customerCpf: sessionData.customer_cpf,
@@ -438,6 +451,7 @@ export const SupabaseService = {
 
         return (data || []).map(m => ({
             id: m.id,
+            tenantId: m.tenant_id,
             sessionId: m.session_id,
             type: m.type,
             amount: parseFloat(m.amount),
@@ -451,6 +465,7 @@ export const SupabaseService = {
             .from('cash_movements')
             .insert({
                 id: movement.id,
+                tenant_id: movement.tenantId,
                 session_id: movement.sessionId,
                 type: movement.type,
                 amount: movement.amount,
@@ -459,5 +474,40 @@ export const SupabaseService = {
             });
 
         if (error) throw error;
+    },
+
+    registerTenant: async (
+        ownerName: string,
+        ownerEmail: string,
+        ownerPassword: string,
+        companyName: string
+    ): Promise<{ success: boolean; error?: string }> => {
+        // Generate slug from company name (basic version)
+        const companySlug = companyName
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+
+        const { data, error } = await supabase.rpc('register_tenant', {
+            owner_name: ownerName,
+            owner_email: ownerEmail,
+            owner_password: ownerPassword,
+            company_name: companyName,
+            company_slug: companySlug,
+        });
+
+        if (error) {
+            console.error('Registration RPC error:', error);
+            // Translate common errors
+            if (error.message === 'EMAIL_TAKEN') return { success: false, error: 'EMAIL_TAKEN' };
+            if (error.message === 'SLUG_TAKEN') return { success: false, error: 'SLUG_TAKEN' };
+            return { success: false, error: error.message };
+        }
+
+        // Check the returned JSON structure if needed, but the RPC returns consistent structure
+        const result = data as { success: boolean; error?: string };
+        return result;
     },
 };

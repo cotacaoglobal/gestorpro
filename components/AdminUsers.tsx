@@ -3,28 +3,34 @@ import { User, Role } from '../types';
 import { SupabaseService } from '../services/supabaseService';
 import { User as UserIcon, Shield, ShieldAlert, Trash2 } from 'lucide-react';
 
-export const AdminUsers: React.FC = () => {
+interface AdminUsersProps {
+  user: User;
+}
+
+export const AdminUsers: React.FC<AdminUsersProps> = ({ user }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'operator' as Role });
 
   useEffect(() => {
     const loadUsers = async () => {
-      const usersData = await SupabaseService.getUsers();
+      if (!user?.tenantId) return;
+      const usersData = await SupabaseService.getUsers(user.tenantId);
       setUsers(usersData);
     };
     loadUsers();
-  }, []);
+  }, [user]);
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const user: Omit<User, 'id'> = {
+      const userToAdd: Omit<User, 'id'> = {
+        tenantId: user.tenantId,
         name: newUser.name,
         email: newUser.email,
         passwordHash: newUser.password,
         role: newUser.role
       };
-      const createdUser = await SupabaseService.addUser(user);
+      const createdUser = await SupabaseService.addUser(userToAdd);
       setUsers([...users, createdUser]);
       setNewUser({ name: '', email: '', password: '', role: 'operator' });
       alert('Usuário criado!');

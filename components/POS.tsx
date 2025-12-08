@@ -92,7 +92,8 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
   useEffect(() => {
     const loadTodaySales = async () => {
       try {
-        const sales = await SupabaseService.getSales();
+        if (!user?.tenantId) return;
+        const sales = await SupabaseService.getSales(user.tenantId);
         const today = new Date().toDateString();
         const todayOnly = sales.filter(s => new Date(s.date).toDateString() === today);
         setTodaySales(todayOnly);
@@ -425,13 +426,14 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
     if (!clientData) return;
 
     const sale: Omit<Sale, 'id'> = {
+      tenantId: user.tenantId,
       sessionId: sessionId,
       userId: user.id,
       customerName: clientData.name,
       customerCpf: clientData.cpf,
       date: new Date().toISOString(),
       items: cart,
-      total: total,
+      total: total, // Use final total
       payments: splitPayments
     };
 
