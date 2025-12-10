@@ -1,9 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Product, CartItem, PaymentMethod, Sale, SalePayment, User } from '../types';
-import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, Banknote, QrCode, Check, LogOut, Store, X, User as UserIcon, AlertTriangle, ScanBarcode, Printer, ArrowRight, Calculator, Tag, Percent, DollarSign, Volume2, VolumeX, TrendingUp, Clock, Star } from 'lucide-react';
+import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, Banknote, QrCode, Check, LogOut, Store, X, User as UserIcon, AlertCircle, AlertTriangle, ScanBarcode, Printer, ArrowRight, Calculator, Tag, Percent, DollarSign, Volume2, VolumeX, TrendingUp, Clock, Star, Wifi, WifiOff, CloudOff } from 'lucide-react';
 import { SupabaseService } from '../services/supabaseService';
 import { CalculatorModal, DiscountModal } from './POSModals';
 import { SaleSuccessModal } from './SaleSuccessModal';
+import { PendingSalesModal } from './PendingSalesModal';
+import { OfflineService, useOnlineStatus } from '../services/offlineService';
+import { syncService } from '../services/syncService';
 
 interface POSProps {
   products: Product[];
@@ -65,6 +68,11 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
   // Clock State
   const [currentTime, setCurrentTime] = useState(new Date());
 
+  // Offline Mode State
+  const isOnline = useOnlineStatus();
+  const [pendingCount, setPendingCount] = useState(0);
+  const [pendingSalesModalOpen, setPendingSalesModalOpen] = useState(false);
+
   // Barcode Scanner Logic Refs
   const barcodeBuffer = useRef<string>('');
   const lastKeyTime = useRef<number>(0);
@@ -99,6 +107,36 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Update pending sales count
+  useEffect(() => {
+    const updatePendingCount = async () => {
+      const count = await OfflineService.countPending();
+      setPendingCount(count);
+    };
+
+    updatePendingCount();
+    const interval = setInterval(updatePendingCount, 5000); // Atualiza a cada 5 segundos
+    return () => clearInterval(interval);
+  }, []);
+
+  // Auto-sync when comes back online
+  useEffect(() => {
+    if (isOnline) {
+      // Pequeno delay para garantir conexão estável
+      const timer = setTimeout(async () => {
+        const pending = await OfflineService.countPending();
+        if (pending > 0) {
+          console.log(`🔄 Voltou online! Iniciando sincronização de ${pending} vendas...`);
+          await syncService.autoSync();
+          // Atualiza contador após sync
+          const newCount = await OfflineService.countPending();
+          setPendingCount(newCount);
+        }
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOnline]);
 
   // Load today's sales for indicators
   useEffect(() => {
@@ -432,7 +470,7 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
   };
 
   const handleFinalizeSale = async () => {
-    const total = calculateFinalTotal(); // Use final total with discount
+    const total = calculateFinalTotal();
     const paid = calculatePaid();
     if (Math.abs(total - paid) > 0.05) return;
     if (!clientData) return;
@@ -445,19 +483,42 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
       customerCpf: clientData.cpf,
       date: new Date().toISOString(),
       items: cart,
-      total: total, // Use final total
+      total: total,
       payments: splitPayments
     };
 
-    const success = await SupabaseService.processSale(sale);
-    if (success) {
-      playSound('success'); // Play success sound
-      // Create a complete sale object for the receipt
-      const completeSale: Sale = { ...sale, id: Date.now().toString() };
-      setCompletedSale(completeSale);
-      setCheckoutModalOpen(false);
-      setReceiptModalOpen(true);
+    let saleId: string;
+    let success = false;
+
+    if (isOnline) {
+      // Tenta enviar online primeiro
+      success = await SupabaseService.processSale(sale);
+
+      if (success) {
+        saleId = Date.now().toString();
+        playSound('success');
+      } else {
+        // Falhou online, salva offline
+        saleId = await OfflineService.addPendingSale(sale);
+        playSound('success');
+        console.log('⚠️ Venda salva offline para sincronização posterior');
+      }
+    } else {
+      // Offline, salva direto na fila
+      saleId = await OfflineService.addPendingSale(sale);
+      playSound('success');
+      console.log('📴 Modo offline - Venda salva localmente');
     }
+
+    // Atualiza contador pendentes
+    const newCount = await OfflineService.countPending();
+    setPendingCount(newCount);
+
+    // Continua o fluxo normal
+    const completeSale: Sale = { ...sale, id: saleId };
+    setCompletedSale(completeSale);
+    setCheckoutModalOpen(false);
+    setReceiptModalOpen(true);
   };
 
   const handlePrintReceipt = () => {
@@ -633,6 +694,23 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
             title={soundEnabled ? 'Desativar Sons' : 'Ativar Sons'}
           >
             {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+          </button>
+
+          {/* Offline/Online Status Badge */}
+          <button
+            onClick={() => setPendingSalesModalOpen(true)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold transition-all ${isOnline
+              ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+              : 'bg-amber-50 text-amber-700 hover:bg-amber-100 animate-pulse'
+              }`}
+            title={isOnline ? 'Sistema Online' : `Modo Offline - ${pendingCount} vendas pendentes`}
+          >
+            {isOnline ? <Wifi size={18} /> : <WifiOff size={18} />}
+            {pendingCount > 0 && (
+              <span className="bg-violet-600 text-white px-2 py-0.5 rounded-full text-xs font-black min-w-[20px] text-center">
+                {pendingCount}
+              </span>
+            )}
           </button>
 
           {/* Calculator */}
@@ -1143,6 +1221,13 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
             onNewClient={handleNextClient}
           />
         )}
+
+        {/* Pending Sales Modal */}
+        <PendingSalesModal
+          isOnline={isOnline}
+          isOpen={pendingSalesModalOpen}
+          onClose={() => setPendingSalesModalOpen(false)}
+        />
       </div>
     </div>
   );
