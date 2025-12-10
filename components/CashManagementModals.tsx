@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, DollarSign, TrendingUp, TrendingDown, CreditCard, AlertTriangle, FileText, Banknote, List, Clock, User, CheckCircle } from 'lucide-react';
-import { CashSession, CashMovement, Sale } from '../types';
+import { CashSession, CashMovement, Sale, PaymentMethod } from '../types';
 import { SupabaseService } from '../services/supabaseService';
 
 // --- Session Details Modal ---
@@ -43,9 +43,9 @@ export const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({ sessio
 
     if (loading || !session) return <div className="fixed inset-0 bg-white z-[60] flex items-center justify-center">Carregando...</div>;
 
-    const totalSalesCash = sales.flatMap(s => s.payments).filter(p => p.method === 'CASH').reduce((a, b) => a + b.amount, 0);
-    const totalSalesCard = sales.flatMap(s => s.payments).filter(p => p.method === 'CREDIT' || p.method === 'DEBIT').reduce((a, b) => a + b.amount, 0);
-    const totalSalesPix = sales.flatMap(s => s.payments).filter(p => p.method === 'PIX').reduce((a, b) => a + b.amount, 0);
+    const totalSalesCash = sales.flatMap(s => s.payments).filter(p => p.method === PaymentMethod.CASH).reduce((a, b) => a + b.amount, 0);
+    const totalSalesCard = sales.flatMap(s => s.payments).filter(p => p.method === PaymentMethod.CREDIT_CARD || p.method === PaymentMethod.DEBIT_CARD).reduce((a, b) => a + b.amount, 0);
+    const totalSalesPix = sales.flatMap(s => s.payments).filter(p => p.method === PaymentMethod.PIX).reduce((a, b) => a + b.amount, 0);
 
     const totalIn = movements.filter(m => m.type === 'ADD_FUND').reduce((a, b) => a + b.amount, 0);
     const totalOut = movements.filter(m => m.type === 'WITHDRAW').reduce((a, b) => a + b.amount, 0);
@@ -74,32 +74,32 @@ export const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({ sessio
                         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-sm space-y-2">
                             <div className="flex justify-between">
                                 <span className="text-slate-500 font-bold">Início:</span>
-                                <span className="font-medium">{new Date(session.startTime).toLocaleString('pt-BR')}</span>
+                                <span className="font-medium">{new Date(session.openedAt).toLocaleString('pt-BR')}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-slate-500 font-bold">Fim:</span>
-                                <span className="font-medium">{session.endTime ? new Date(session.endTime).toLocaleString('pt-BR') : 'Em andamento'}</span>
+                                <span className="font-medium">{session.closedAt ? new Date(session.closedAt).toLocaleString('pt-BR') : 'Em andamento'}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-slate-500 font-bold">Fundo Inicial:</span>
                                 <span className="font-medium">R$ {session.initialFund.toFixed(2)}</span>
                             </div>
-                            {session.countedCash !== null && (
+                            {session.reportedTotals?.[PaymentMethod.CASH] && (
                                 <div className="flex justify-between">
                                     <span className="text-slate-500 font-bold">Caixa Contado:</span>
-                                    <span className="font-medium">R$ {session.countedCash.toFixed(2)}</span>
+                                    <span className="font-medium">R$ {session.reportedTotals[PaymentMethod.CASH].toFixed(2)}</span>
                                 </div>
                             )}
-                            {session.countedCard !== null && (
+                            {(session.reportedTotals?.[PaymentMethod.CREDIT_CARD] || session.reportedTotals?.[PaymentMethod.DEBIT_CARD]) && (
                                 <div className="flex justify-between">
                                     <span className="text-slate-500 font-bold">Cartão Contado:</span>
-                                    <span className="font-medium">R$ {session.countedCard.toFixed(2)}</span>
+                                    <span className="font-medium">R$ {((session.reportedTotals[PaymentMethod.CREDIT_CARD] || 0) + (session.reportedTotals[PaymentMethod.DEBIT_CARD] || 0)).toFixed(2)}</span>
                                 </div>
                             )}
-                            {session.countedPix !== null && (
+                            {session.reportedTotals?.[PaymentMethod.PIX] && (
                                 <div className="flex justify-between">
                                     <span className="text-slate-500 font-bold">Pix Contado:</span>
-                                    <span className="font-medium">R$ {session.countedPix.toFixed(2)}</span>
+                                    <span className="font-medium">R$ {session.reportedTotals[PaymentMethod.PIX].toFixed(2)}</span>
                                 </div>
                             )}
                             <div className="pt-2 border-t border-slate-200 flex justify-between text-base">
@@ -136,7 +136,7 @@ export const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({ sessio
                                                 </div>
                                                 <div>
                                                     <p className="font-bold text-slate-700 text-sm">Venda #{sale.id.substring(0, 8)}</p>
-                                                    <p className="text-xs text-slate-400">{new Date(sale.timestamp).toLocaleTimeString('pt-BR')}</p>
+                                                    <p className="text-xs text-slate-400">{new Date(sale.date).toLocaleTimeString('pt-BR')}</p>
                                                 </div>
                                             </div>
                                             <span className="font-black text-emerald-600">R$ {sale.payments.reduce((a, b) => a + b.amount, 0).toFixed(2)}</span>
@@ -237,9 +237,9 @@ export const CloseSessionModal: React.FC<CloseSessionModalProps> = ({ sessionId,
     if (loading || !session) return <div className="fixed inset-0 bg-white z-[60] flex items-center justify-center">Carregando...</div>;
 
     // Computed Expected Values
-    const totalSalesCash = sales.flatMap(s => s.payments).filter(p => p.method === 'CASH').reduce((a, b) => a + b.amount, 0);
-    const totalSalesCard = sales.flatMap(s => s.payments).filter(p => p.method === 'CREDIT' || p.method === 'DEBIT').reduce((a, b) => a + b.amount, 0);
-    const totalSalesPix = sales.flatMap(s => s.payments).filter(p => p.method === 'PIX').reduce((a, b) => a + b.amount, 0);
+    const totalSalesCash = sales.flatMap(s => s.payments).filter(p => p.method === PaymentMethod.CASH).reduce((a, b) => a + b.amount, 0);
+    const totalSalesCard = sales.flatMap(s => s.payments).filter(p => p.method === PaymentMethod.CREDIT_CARD || p.method === PaymentMethod.DEBIT_CARD).reduce((a, b) => a + b.amount, 0);
+    const totalSalesPix = sales.flatMap(s => s.payments).filter(p => p.method === PaymentMethod.PIX).reduce((a, b) => a + b.amount, 0);
 
     const totalIn = movements.filter(m => m.type === 'ADD_FUND').reduce((a, b) => a + b.amount, 0);
     const totalOut = movements.filter(m => m.type === 'WITHDRAW').reduce((a, b) => a + b.amount, 0);
@@ -251,9 +251,9 @@ export const CloseSessionModal: React.FC<CloseSessionModalProps> = ({ sessionId,
         setCalculating(true);
         try {
             const totals = {
-                CASH: parseFloat(countedCash) || 0,
-                CARD: parseFloat(countedCard) || 0, // Simplified, ideally separate Credit/Debit
-                PIX: parseFloat(countedPix) || 0
+                [PaymentMethod.CASH]: parseFloat(countedCash) || 0,
+                [PaymentMethod.CREDIT_CARD]: parseFloat(countedCard) || 0, // Simplified, combining card types
+                [PaymentMethod.PIX]: parseFloat(countedPix) || 0
             };
             await onConfirm(sessionId, totals);
             onClose();

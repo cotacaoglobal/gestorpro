@@ -31,6 +31,24 @@ const App: React.FC = () => {
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
+  // Load user from localStorage on initial mount
+  useEffect(() => {
+    const savedUser = localStorage.getItem('gestorpro_user');
+    if (savedUser) {
+      try {
+        const parsedUser = JSON.parse(savedUser) as User;
+        setUser(parsedUser);
+        const targetView = parsedUser.role === 'admin' ? 'DASHBOARD' : 'OPERATOR_HOME';
+        setView(targetView);
+        navigate(parsedUser.role === 'admin' ? '/dashboard' : '/operator', { replace: true });
+      } catch (error) {
+        console.error('Error parsing saved user:', error);
+        localStorage.removeItem('gestorpro_user');
+      }
+    }
+    setLoading(false);
+  }, []);
+
   const loadData = async () => {
     if (!user?.tenantId) return;
 
@@ -52,8 +70,6 @@ const App: React.FC = () => {
   useEffect(() => {
     if (user) {
       loadData();
-    } else {
-      setLoading(false);
     }
   }, [user]); // Dependencies updated to 'user'
 
@@ -82,6 +98,8 @@ const App: React.FC = () => {
 
   const handleLogin = (loggedInUser: User) => {
     setUser(loggedInUser);
+    // Save user to localStorage for session persistence
+    localStorage.setItem('gestorpro_user', JSON.stringify(loggedInUser));
     const targetView = loggedInUser.role === 'admin' ? 'DASHBOARD' : 'OPERATOR_HOME';
     setView(targetView);
     navigate(loggedInUser.role === 'admin' ? '/dashboard' : '/operator');
@@ -91,6 +109,8 @@ const App: React.FC = () => {
     setUser(null);
     setView('LOGIN');
     setActiveSessionId(undefined);
+    // Remove user from localStorage
+    localStorage.removeItem('gestorpro_user');
     navigate('/login');
   };
 
@@ -171,6 +191,8 @@ const App: React.FC = () => {
     try {
       await SupabaseService.updateUser(updatedUser);
       setUser(updatedUser);
+      // Update localStorage with new user data
+      localStorage.setItem('gestorpro_user', JSON.stringify(updatedUser));
     } catch (error) {
       console.error('Error updating profile:', error);
     }
