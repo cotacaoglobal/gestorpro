@@ -257,7 +257,7 @@ const App: React.FC = () => {
       />
 
       <main className="flex-1 overflow-y-auto overflow-x-hidden p-2 relative scroll-smooth">
-        {view === 'DASHBOARD' && <Dashboard sales={sales} products={products} onViewLowStock={handleViewLowStock} />}
+        {view === 'DASHBOARD' && <Dashboard sales={sales} products={products} onViewLowStock={handleViewLowStock} user={user} />}
         {view === 'INVENTORY' && <Inventory products={products} onUpdate={handleProductUpdate} onDelete={handleProductDelete} initialFilterLowStock={highlightLowStock} />}
         {view === 'HISTORY' && <SalesHistory sales={sales} user={user} />}
         {view === 'USERS' && <AdminUsers user={user} />}

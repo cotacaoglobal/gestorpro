@@ -3,6 +3,7 @@ import { Product, CartItem, PaymentMethod, Sale, SalePayment, User } from '../ty
 import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, Banknote, QrCode, Check, LogOut, Store, X, User as UserIcon, AlertTriangle, ScanBarcode, Printer, ArrowRight, Calculator, Tag, Percent, DollarSign, Volume2, VolumeX, TrendingUp, Clock, Star } from 'lucide-react';
 import { SupabaseService } from '../services/supabaseService';
 import { CalculatorModal, DiscountModal } from './POSModals';
+import { SaleSuccessModal } from './SaleSuccessModal';
 
 interface POSProps {
   products: Product[];
@@ -61,6 +62,9 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
   const [todaySales, setTodaySales] = useState<Sale[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
 
+  // Clock State
+  const [currentTime, setCurrentTime] = useState(new Date());
+
   // Barcode Scanner Logic Refs
   const barcodeBuffer = useRef<string>('');
   const lastKeyTime = useRef<number>(0);
@@ -87,6 +91,14 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
       searchInputRef.current?.focus();
     }
   }, [clientData, checkoutModalOpen, receiptModalOpen]);
+
+  // Clock update
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Load today's sales for indicators
   useEffect(() => {
@@ -573,7 +585,19 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
             <Store size={24} />
           </div>
           <div>
-            <h1 className="font-extrabold text-lg leading-tight text-slate-800">Terminal de Vendas</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="font-extrabold text-lg leading-tight text-slate-800">Terminal de Vendas</h1>
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-50 border border-slate-100">
+                <Clock size={14} className="text-violet-600" />
+                <span className="text-xs font-bold text-slate-700">
+                  {currentTime.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                </span>
+                <span className="text-slate-300">•</span>
+                <span className="text-sm font-black text-violet-600 tabular-nums">
+                  {currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+              </div>
+            </div>
             <div className="flex items-center gap-4 text-xs font-medium mt-1">
               <span className="px-2 py-1 rounded-lg bg-slate-100 text-slate-600">
                 Op: {user.name}
@@ -1017,34 +1041,6 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
           </div>
         )}
 
-        {/* Receipt Modal (New) */}
-        {receiptModalOpen && completedSale && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[60] p-4 animate-in fade-in zoom-in-95 duration-200">
-            <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md p-8 text-center">
-              <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-100">
-                <Check size={40} strokeWidth={3} />
-              </div>
-              <h3 className="text-3xl font-extrabold text-slate-800 mb-2">Venda Concluída!</h3>
-              <p className="text-slate-500 mb-8">Deseja imprimir o comprovante?</p>
-
-              <div className="space-y-4">
-                <button
-                  onClick={handlePrintReceipt}
-                  className="w-full py-4 bg-slate-800 text-white rounded-2xl font-bold shadow-lg hover:bg-slate-900 transition-all flex items-center justify-center gap-3"
-                >
-                  <Printer size={20} /> Imprimir Nota Fiscal
-                </button>
-                <button
-                  onClick={handleNextClient}
-                  className="w-full py-4 bg-violet-600 text-white rounded-2xl font-bold shadow-lg shadow-violet-200 hover:bg-violet-700 transition-all flex items-center justify-center gap-3"
-                >
-                  Novo Cliente <ArrowRight size={20} />
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Calculator Modal */}
         <CalculatorModal
           isOpen={calculatorOpen}
@@ -1118,9 +1114,9 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
                             key={i}
                             className="text-[10px] bg-white px-2 py-1 rounded-lg font-bold text-slate-600"
                           >
-                            {payment.method === 'CREDIT' ? '💳 Crédito' :
-                              payment.method === 'DEBIT' ? '💳 Débito' :
-                                payment.method === 'PIX' ? '📱 PIX' : '💵 Dinheiro'}
+                            {payment.method === PaymentMethod.CREDIT_CARD ? '💳 Crédito' :
+                              payment.method === PaymentMethod.DEBIT_CARD ? '💳 Débito' :
+                                payment.method === PaymentMethod.PIX ? '📱 PIX' : '💵 Dinheiro'}
                           </span>
                         ))}
                       </div>
@@ -1137,6 +1133,15 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
               </div>
             </div>
           </div>
+        )}
+
+        {/* Sale Success Modal */}
+        {receiptModalOpen && completedSale && (
+          <SaleSuccessModal
+            sale={completedSale}
+            onClose={handleNextClient}
+            onNewClient={handleNextClient}
+          />
         )}
       </div>
     </div>

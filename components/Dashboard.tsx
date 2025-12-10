@@ -8,9 +8,10 @@ interface DashboardProps {
   sales: Sale[];
   products: Product[];
   onViewLowStock: () => void;
+  user: User;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ sales, products, onViewLowStock }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ sales, products, onViewLowStock, user }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [activeSessions, setActiveSessions] = useState<any[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -18,20 +19,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ sales, products, onViewLow
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const usersData = await SupabaseService.getUsers();
+        if (!user?.tenantId) return;
+        const usersData = await SupabaseService.getUsers(user.tenantId);
         setUsers(usersData);
       } catch (error) {
         console.error('Error loading users:', error);
       }
     };
     loadUsers();
-  }, []);
+  }, [user]);
 
   // Load active sessions
   useEffect(() => {
     const loadSessions = async () => {
       try {
-        const sessions = await SupabaseService.getSessions();
+        if (!user?.tenantId) return;
+        const sessions = await SupabaseService.getSessions(user.tenantId);
         const active = sessions.filter(s => s.status === 'OPEN');
         setActiveSessions(active);
       } catch (error) {
@@ -47,7 +50,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ sales, products, onViewLow
     }, 30000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   // Stats Calculation
   const totalRevenue = sales.reduce((acc, sale) => acc + sale.total, 0);
