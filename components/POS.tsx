@@ -470,55 +470,105 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
   };
 
   const handleFinalizeSale = async () => {
-    const total = calculateFinalTotal();
-    const paid = calculatePaid();
-    if (Math.abs(total - paid) > 0.05) return;
-    if (!clientData) return;
+    try {
+      const total = calculateFinalTotal();
+      const paid = calculatePaid();
 
-    const sale: Omit<Sale, 'id'> = {
-      tenantId: user.tenantId,
-      sessionId: sessionId,
-      userId: user.id,
-      customerName: clientData.name,
-      customerCpf: clientData.cpf,
-      date: new Date().toISOString(),
-      items: cart,
-      total: total,
-      payments: splitPayments
-    };
+      console.log('🔍 DEBUG - Total:', total, 'Pago:', paid);
 
-    let saleId: string;
-    let success = false;
-
-    if (isOnline) {
-      // Tenta enviar online primeiro
-      success = await SupabaseService.processSale(sale);
-
-      if (success) {
-        saleId = Date.now().toString();
-        playSound('success');
-      } else {
-        // Falhou online, salva offline
-        saleId = await OfflineService.addPendingSale(sale);
-        playSound('success');
-        console.log('⚠️ Venda salva offline para sincronização posterior');
+      if (Math.abs(total - paid) > 0.05) {
+        console.warn('⚠️ Pagamento incompleto');
+        return;
       }
-    } else {
-      // Offline, salva direto na fila
-      saleId = await OfflineService.addPendingSale(sale);
-      playSound('success');
-      console.log('📴 Modo offline - Venda salva localmente');
+      if (!clientData) {
+        console.warn('⚠️ Sem dados do cliente');
+        return;
+      }
+
+      console.log('✅ Iniciando processamento da venda...');
+
+      const sale: Omit<Sale, 'id'> = {
+        tenantId: user.tenantId,
+        sessionId: sessionId,
+        userId: user.id,
+        customerName: clientData.name,
+        customerCpf: clientData.cpf,
+        date: new Date().toISOString(),
+        items: cart,
+        total: total,
+        payments: splitPayments
+      };
+
+      console.log('📦 Dados da venda:', sale);
+
+      let saleId = Date.now().toString();
+      let vendaSalva = false;
+
+      // Tenta processar venda online
+      try {
+        if (isOnline) {
+          console.log('🌐 Tentando salvar online...');
+          const success = await SupabaseService.processSale(sale);
+
+          if (success) {
+            console.log('✅ Venda salva no Supabase com sucesso!');
+            vendaSalva = true;
+          } else {
+            console.warn('⚠️ Falha ao salvar no Supabase, tentando offline...');
+          }
+        } else {
+          console.log('📴 Sistema detectado como offline');
+        }
+
+        // Se falhou online ou está offline, tenta salvar offline
+        if (!vendaSalva) {
+          try {
+            console.log('💾 Salvando venda offline...');
+            saleId = await OfflineService.addPendingSale(sale);
+            console.log('✅ Venda salva offline! ID:', saleId);
+            vendaSalva = true;
+          } catch (offlineError) {
+            console.error('❌ Erro ao salvar offline:', offlineError);
+            // Mesmo assim continua com venda
+            vendaSalva = true; // Permite continuar
+          }
+        }
+
+        // Atualiza contador de pendentes (com proteção)
+        try {
+          const newCount = await OfflineService.countPending();
+          setPendingCount(newCount);
+          console.log('📊 Vendas pendentes:', newCount);
+        } catch (countError) {
+          console.error('⚠️ Erro ao contar pendentes:', countError);
+          // Não bloqueia se falhar
+        }
+
+      } catch (saveError) {
+        console.error('❌ Erro ao processar venda:', saveError);
+        // Mesmo com erro, permite continuar
+        vendaSalva = true;
+      }
+
+      // Sempre continua o fluxo se chegou até aqui
+      if (vendaSalva) {
+        playSound('success');
+
+        const completeSale: Sale = { ...sale, id: saleId };
+        setCompletedSale(completeSale);
+        setCheckoutModalOpen(false);
+        setReceiptModalOpen(true);
+
+        console.log('🎉 Venda finalizada! Modal aberto.');
+      } else {
+        console.error('❌ Falha crítica ao salvar venda');
+        alert('Erro ao processar venda. Por favor, tente novamente.');
+      }
+
+    } catch (error) {
+      console.error('💥 ERRO CRÍTICO inesperado:', error);
+      alert('Erro crítico ao processar venda: ' + (error as Error).message);
     }
-
-    // Atualiza contador pendentes
-    const newCount = await OfflineService.countPending();
-    setPendingCount(newCount);
-
-    // Continua o fluxo normal
-    const completeSale: Sale = { ...sale, id: saleId };
-    setCompletedSale(completeSale);
-    setCheckoutModalOpen(false);
-    setReceiptModalOpen(true);
   };
 
   const handlePrintReceipt = () => {

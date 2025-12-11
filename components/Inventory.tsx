@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Product } from '../types';
-import { Plus, Search, Trash2, Edit, AlertTriangle, Upload, X, Image as ImageIcon, Printer, Filter, MoreHorizontal, Copy } from 'lucide-react';
+import { Plus, Search, Trash2, Edit, AlertTriangle, Upload, X, Image as ImageIcon, Printer, Filter, MoreHorizontal, Copy, ChevronDown, SlidersHorizontal, XCircle, ArrowUpDown } from 'lucide-react';
 
 interface InventoryProps {
   products: Product[];
@@ -15,8 +15,20 @@ export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDele
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [filterLowStock, setFilterLowStock] = useState(initialFilterLowStock);
 
+  // Advanced Filters
+  const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
+  const [stockFilter, setStockFilter] = useState<'all' | 'low' | 'normal' | 'high'>('all');
+  const [priceMin, setPriceMin] = useState<string>('');
+  const [priceMax, setPriceMax] = useState<string>('');
+  const [sortBy, setSortBy] = useState<'name' | 'price' | 'stock'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [showFilters, setShowFilters] = useState(false);
+
   useEffect(() => {
     setFilterLowStock(initialFilterLowStock);
+    if (initialFilterLowStock) {
+      setStockFilter('low');
+    }
   }, [initialFilterLowStock]);
 
   const [formData, setFormData] = useState<Partial<Product>>({});
@@ -196,35 +208,73 @@ export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDele
     }
   };
 
-  const filteredProducts = products.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.barcode.includes(searchTerm) ||
-      p.internalCode.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStock = filterLowStock ? p.stock <= p.minStock : true;
-    return matchesSearch && matchesStock;
-  });
+  // Get unique categories
+  const categories = ['Todas', ...Array.from(new Set(products.map(p => p.category)))];
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSelectedCategory('Todas');
+    setStockFilter('all');
+    setPriceMin('');
+    setPriceMax('');
+    setFilterLowStock(false);
+    setSearchTerm('');
+  };
+
+  // Check if any filter is active
+  const hasActiveFilters = selectedCategory !== 'Todas' || stockFilter !== 'all' || priceMin !== '' || priceMax !== '' || filterLowStock;
+
+  // Advanced filtering and sorting
+  const filteredProducts = products
+    .filter(p => {
+      // Search filter
+      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.barcode.includes(searchTerm) ||
+        p.internalCode.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Category filter
+      const matchesCategory = selectedCategory === 'Todas' || p.category === selectedCategory;
+
+      // Stock filter
+      let matchesStock = true;
+      if (stockFilter === 'low') {
+        matchesStock = p.stock <= p.minStock;
+      } else if (stockFilter === 'normal') {
+        matchesStock = p.stock > p.minStock && p.stock <= p.minStock * 3;
+      } else if (stockFilter === 'high') {
+        matchesStock = p.stock > p.minStock * 3;
+      }
+
+      // Price filter
+      const minPrice = priceMin ? parseFloat(priceMin) : 0;
+      const maxPrice = priceMax ? parseFloat(priceMax) : Infinity;
+      const matchesPrice = p.priceSell >= minPrice && p.priceSell <= maxPrice;
+
+      return matchesSearch && matchesCategory && matchesStock && matchesPrice;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      if (sortBy === 'name') {
+        comparison = a.name.localeCompare(b.name);
+      } else if (sortBy === 'price') {
+        comparison = a.priceSell - b.priceSell;
+      } else if (sortBy === 'stock') {
+        comparison = a.stock - b.stock;
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
 
   return (
     <div className="p-6 md:p-8 max-w-[1600px] mx-auto h-full flex flex-col">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <div>
           <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">Estoque</h2>
-          <p className="text-slate-500 font-medium">Gerencie seus produtos e preços</p>
+          <p className="text-slate-500 font-medium">
+            Gerencie seus produtos e preços • {filteredProducts.length} de {products.length} produtos
+          </p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <button
-            onClick={() => setFilterLowStock(!filterLowStock)}
-            className={`px-5 py-3 rounded-2xl flex items-center gap-2 font-semibold transition-all shadow-sm ${filterLowStock
-                ? 'bg-rose-100 text-rose-600 shadow-rose-100'
-                : 'bg-white text-slate-600 hover:bg-slate-50'
-              }`}
-          >
-            <Filter size={18} />
-            {filterLowStock ? 'Filtro: Baixo Estoque' : 'Filtrar'}
-            {filterLowStock && <X size={14} />}
-          </button>
-
           <div className="relative flex-1 md:w-80">
             <Search className="absolute left-4 top-3.5 text-slate-400" size={20} />
             <input
@@ -235,6 +285,24 @@ export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDele
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`px-5 py-3 rounded-2xl flex items-center gap-2 font-semibold transition-all shadow-sm ${hasActiveFilters || showFilters
+                ? 'bg-violet-100 text-violet-700 shadow-violet-100'
+                : 'bg-white text-slate-600 hover:bg-slate-50'
+              }`}
+          >
+            <SlidersHorizontal size={18} />
+            Filtros
+            {hasActiveFilters && (
+              <span className="bg-violet-600 text-white px-2 py-0.5 rounded-full text-xs font-black min-w-[20px] text-center">
+                {[selectedCategory !== 'Todas', stockFilter !== 'all', priceMin !== '', priceMax !== ''].filter(Boolean).length}
+              </span>
+            )}
+            <ChevronDown size={16} className={`transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+          </button>
+
           <button
             onClick={() => handleOpenModal()}
             className="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-2xl flex items-center gap-2 font-bold shadow-lg shadow-violet-200 transition-transform active:scale-95"
@@ -243,6 +311,116 @@ export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDele
           </button>
         </div>
       </div>
+
+      {/* Advanced Filters Panel */}
+      {showFilters && (
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-in slide-in-from-top duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Category Filter */}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Categoria</label>
+              <div className="relative">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full bg-slate-50 border-none rounded-xl p-3 pr-10 focus:ring-2 focus:ring-violet-500 font-medium text-slate-800 appearance-none cursor-pointer"
+                >
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" size={18} />
+              </div>
+            </div>
+
+            {/* Stock Status Filter */}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Status Estoque</label>
+              <div className="relative">
+                <select
+                  value={stockFilter}
+                  onChange={(e) => setStockFilter(e.target.value as any)}
+                  className="w-full bg-slate-50 border-none rounded-xl p-3 pr-10 focus:ring-2 focus:ring-violet-500 font-medium text-slate-800 appearance-none cursor-pointer"
+                >
+                  <option value="all">Todos</option>
+                  <option value="low">🔴 Baixo Estoque</option>
+                  <option value="normal">🟡 Estoque Normal</option>
+                  <option value="high">🟢 Estoque Alto</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" size={18} />
+              </div>
+            </div>
+
+            {/* Price Range Filter */}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Faixa de Preço</label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-3 text-slate-400 text-xs font-bold">Min</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={priceMin}
+                    onChange={(e) => setPriceMin(e.target.value)}
+                    className="w-full bg-slate-50 border-none rounded-xl pl-12 pr-2 py-3 focus:ring-2 focus:ring-violet-500 font-medium text-slate-800 text-sm"
+                  />
+                </div>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-3 text-slate-400 text-xs font-bold">Max</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="999.99"
+                    value={priceMax}
+                    onChange={(e) => setPriceMax(e.target.value)}
+                    className="w-full bg-slate-50 border-none rounded-xl pl-12 pr-2 py-3 focus:ring-2 focus:ring-violet-500 font-medium text-slate-800 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Sort Options */}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Ordenar Por</label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="w-full bg-slate-50 border-none rounded-xl p-3 pr-10 focus:ring-2 focus:ring-violet-500 font-medium text-slate-800 appearance-none cursor-pointer text-sm"
+                  >
+                    <option value="name">Nome</option>
+                    <option value="price">Preço</option>
+                    <option value="stock">Estoque</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" size={16} />
+                </div>
+                <button
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                  className="px-3 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors"
+                  title={sortOrder === 'asc' ? 'Crescente' : 'Decrescente'}
+                >
+                  <ArrowUpDown size={18} className={`text-slate-600 transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Clear Filters Button */}
+          {hasActiveFilters && (
+            <div className="mt-4 pt-4 border-t border-slate-100 flex justify-end">
+              <button
+                onClick={clearFilters}
+                className="px-4 py-2 text-sm font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors flex items-center gap-2"
+              >
+                <XCircle size={16} />
+                Limpar Filtros
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="bg-white rounded-[2.5rem] shadow-sm flex-1 overflow-hidden flex flex-col">
         <div className="overflow-y-auto flex-1">

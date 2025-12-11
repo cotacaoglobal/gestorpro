@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { X, Download, Share2, MessageCircle, Mail, FileText, Image as ImageIcon, FileCheck } from 'lucide-react';
+import { X, Download, Share2, MessageCircle, Mail, FileText, Image as ImageIcon, FileCheck, Printer } from 'lucide-react';
 import { Sale } from '../types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { ThermalPrintService } from '../services/thermalPrintService';
 
 interface SaleSuccessModalProps {
     sale: Sale;
@@ -338,6 +339,14 @@ export const SaleSuccessModal: React.FC<SaleSuccessModalProps> = ({ sale, onClos
                                 </button>
 
                                 <button
+                                    onClick={() => ThermalPrintService.printReceipt(sale)}
+                                    className="w-full py-4 rounded-xl font-bold bg-violet-500 text-white hover:bg-violet-600 transition-colors flex items-center justify-center gap-3"
+                                >
+                                    <Printer size={20} />
+                                    Impressora Térmica
+                                </button>
+
+                                <button
                                     onClick={handleDownloadPDF}
                                     className="w-full py-4 rounded-xl font-bold bg-red-500 text-white hover:bg-red-600 transition-colors flex items-center justify-center gap-3"
                                 >
@@ -388,8 +397,8 @@ export const SaleSuccessModal: React.FC<SaleSuccessModalProps> = ({ sale, onClos
                                         <button
                                             onClick={() => setSelectedFormat('text')}
                                             className={`py-3 rounded-xl font-bold text-sm transition-all ${selectedFormat === 'text'
-                                                    ? 'bg-green-500 text-white shadow-lg'
-                                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                ? 'bg-green-500 text-white shadow-lg'
+                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                                 }`}
                                         >
                                             <FileText size={16} className="mx-auto mb-1" />
@@ -398,8 +407,8 @@ export const SaleSuccessModal: React.FC<SaleSuccessModalProps> = ({ sale, onClos
                                         <button
                                             onClick={() => setSelectedFormat('image')}
                                             className={`py-3 rounded-xl font-bold text-sm transition-all ${selectedFormat === 'image'
-                                                    ? 'bg-green-500 text-white shadow-lg'
-                                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                ? 'bg-green-500 text-white shadow-lg'
+                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                                 }`}
                                         >
                                             <ImageIcon size={16} className="mx-auto mb-1" />
@@ -408,8 +417,8 @@ export const SaleSuccessModal: React.FC<SaleSuccessModalProps> = ({ sale, onClos
                                         <button
                                             onClick={() => setSelectedFormat('pdf')}
                                             className={`py-3 rounded-xl font-bold text-sm transition-all ${selectedFormat === 'pdf'
-                                                    ? 'bg-green-500 text-white shadow-lg'
-                                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                ? 'bg-green-500 text-white shadow-lg'
+                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                                 }`}
                                         >
                                             <Download size={16} className="mx-auto mb-1" />
