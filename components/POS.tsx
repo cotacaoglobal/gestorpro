@@ -73,6 +73,9 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
   const [pendingCount, setPendingCount] = useState(0);
   const [pendingSalesModalOpen, setPendingSalesModalOpen] = useState(false);
 
+  // Estado para prevenir múltiplas execuções de venda
+  const [isProcessingSale, setIsProcessingSale] = useState(false);
+
   // Barcode Scanner Logic Refs
   const barcodeBuffer = useRef<string>('');
   const lastKeyTime = useRef<number>(0);
@@ -158,7 +161,7 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
       const interval = setInterval(loadTodaySales, 30000);
       return () => clearInterval(interval);
     }
-  }, [sessionId]);
+  }, [sessionId, user?.tenantId]);
 
   // Sound Functions
   const playSound = (type: 'beep' | 'success' | 'error') => {
@@ -470,7 +473,15 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
   };
 
   const handleFinalizeSale = async () => {
+    // PROTEÇÃO CONTRA MÚLTIPLAS EXECUÇÕES (Previne vendas duplicadas)
+    if (isProcessingSale) {
+      console.warn('⚠️ Venda já está sendo processada, aguarde...');
+      return;
+    }
+
     try {
+      setIsProcessingSale(true); // Bloqueia novas tentativas
+
       const total = calculateFinalTotal();
       const paid = calculatePaid();
 
@@ -478,10 +489,12 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
 
       if (Math.abs(total - paid) > 0.05) {
         console.warn('⚠️ Pagamento incompleto');
+        setIsProcessingSale(false);
         return;
       }
       if (!clientData) {
         console.warn('⚠️ Sem dados do cliente');
+        setIsProcessingSale(false);
         return;
       }
 
@@ -546,8 +559,9 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
 
       } catch (saveError) {
         console.error('❌ Erro ao processar venda:', saveError);
-        // Mesmo com erro, permite continuar
-        vendaSalva = true;
+        setIsProcessingSale(false); // Libera para nova tentativa em caso de erro
+        alert('Erro ao processar venda. Por favor, tente novamente.');
+        return;
       }
 
       // Sempre continua o fluxo se chegou até aqui
@@ -558,15 +572,18 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
         setCompletedSale(completeSale);
         setCheckoutModalOpen(false);
         setReceiptModalOpen(true);
+        setIsProcessingSale(false); // Libera após sucesso
 
         console.log('🎉 Venda finalizada! Modal aberto.');
       } else {
         console.error('❌ Falha crítica ao salvar venda');
+        setIsProcessingSale(false);
         alert('Erro ao processar venda. Por favor, tente novamente.');
       }
 
     } catch (error) {
       console.error('💥 ERRO CRÍTICO inesperado:', error);
+      setIsProcessingSale(false); // Libera em caso de erro crítico
       alert('Erro crítico ao processar venda: ' + (error as Error).message);
     }
   };
@@ -1159,10 +1176,11 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
               <div className="p-8 border-t border-slate-100 bg-slate-50/50">
                 <button
                   onClick={handleFinalizeSale}
-                  disabled={calculateRemaining() > 0.05}
+                  disabled={calculateRemaining() > 0.05 || isProcessingSale}
                   className="w-full py-5 bg-violet-600 disabled:bg-slate-300 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-black text-lg rounded-2xl shadow-xl shadow-violet-200 flex items-center justify-center gap-3 hover:bg-violet-700 transition-all active:scale-95"
                 >
-                  <Check size={24} strokeWidth={3} /> Confirmar Venda
+                  <Check size={24} strokeWidth={3} />
+                  {isProcessingSale ? 'Processando...' : 'Confirmar Venda'}
                 </button>
               </div>
             </div>

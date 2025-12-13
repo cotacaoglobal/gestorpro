@@ -9,13 +9,16 @@ import { Login } from './components/Login';
 import { OperatorHome } from './components/OperatorHome';
 import { AdminUsers } from './components/AdminUsers';
 import { CashManagement } from './components/CashManagement';
+import { DuplicateCleanup } from './components/DuplicateCleanup';
+import { StoreSettings } from './components/StoreSettings';
+import { PrinterSettings } from './components/PrinterSettings';
+import { BackupData } from './components/BackupData';
+import { ManageCategories } from './components/ManageCategories';
+import { Notifications } from './components/Notifications';
 import { ProfileModal } from './components/ProfileModal';
 import { RegisterTenant } from './components/RegisterTenant';
 import { Product, Sale, ViewState, User } from './types';
 import { SupabaseService } from './services/supabaseService';
-import { GeminiService } from './services/geminiService';
-import { XCircle, Sparkles } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
 
 const App: React.FC = () => {
   const navigate = useNavigate();
@@ -27,8 +30,6 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [highlightLowStock, setHighlightLowStock] = useState(false);
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>(undefined);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // Load user from localStorage on initial mount
@@ -90,6 +91,18 @@ const App: React.FC = () => {
       setView('USERS');
     } else if (path === '/cash') {
       setView('CASH_MANAGEMENT');
+    } else if (path === '/duplicates') {
+      setView('DUPLICATE_CLEANUP');
+    } else if (path === '/settings/store') {
+      setView('STORE_SETTINGS');
+    } else if (path === '/settings/printer') {
+      setView('PRINTER_SETTINGS');
+    } else if (path === '/settings/backup') {
+      setView('BACKUP_DATA');
+    } else if (path === '/settings/categories') {
+      setView('MANAGE_CATEGORIES');
+    } else if (path === '/settings/notifications') {
+      setView('NOTIFICATIONS');
     }
 
     // Force remove dark mode class
@@ -159,7 +172,13 @@ const App: React.FC = () => {
       'USERS': '/users',
       'POS': '/pos',
       'OPERATOR_HOME': '/operator',
-      'CASH_MANAGEMENT': '/cash'
+      'CASH_MANAGEMENT': '/cash',
+      'DUPLICATE_CLEANUP': '/duplicates',
+      'STORE_SETTINGS': '/settings/store',
+      'PRINTER_SETTINGS': '/settings/printer',
+      'BACKUP_DATA': '/settings/backup',
+      'MANAGE_CATEGORIES': '/settings/categories',
+      'NOTIFICATIONS': '/settings/notifications'
     };
     navigate(pathMap[newView] || '/dashboard');
   };
@@ -174,13 +193,6 @@ const App: React.FC = () => {
     setActiveSessionId(sessionId);
     setView('POS');
     navigate('/pos');
-  };
-
-  const handleAiAnalysis = async () => {
-    setIsAnalyzing(true);
-    const result = await GeminiService.analyzeBusiness(products, sales);
-    setAiAnalysis(result);
-    setIsAnalyzing(false);
   };
 
   const handleEditProfile = () => {
@@ -248,8 +260,6 @@ const App: React.FC = () => {
       <Sidebar
         currentView={view}
         setView={handleViewChange}
-        onAnalyze={handleAiAnalysis}
-        isAnalyzing={isAnalyzing}
         isAdmin={user.role === 'admin'}
         onLogout={handleLogout}
         user={user}
@@ -262,6 +272,12 @@ const App: React.FC = () => {
         {view === 'HISTORY' && <SalesHistory sales={sales} user={user} />}
         {view === 'USERS' && <AdminUsers user={user} />}
         {view === 'CASH_MANAGEMENT' && <CashManagement user={user} />}
+        {view === 'DUPLICATE_CLEANUP' && <DuplicateCleanup user={user} onComplete={loadData} />}
+        {view === 'STORE_SETTINGS' && <StoreSettings user={user} />}
+        {view === 'PRINTER_SETTINGS' && <PrinterSettings />}
+        {view === 'BACKUP_DATA' && <BackupData user={user} />}
+        {view === 'MANAGE_CATEGORIES' && <ManageCategories user={user} />}
+        {view === 'NOTIFICATIONS' && <Notifications user={user} />}
       </main>
 
       {/* Profile Modal */}
@@ -271,26 +287,6 @@ const App: React.FC = () => {
           onClose={() => setIsProfileModalOpen(false)}
           onUpdate={handleUpdateProfile}
         />
-      )}
-
-      {aiAnalysis && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-3xl max-h-[80vh] rounded-[2rem] shadow-2xl flex flex-col overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-violet-50">
-              <h3 className="text-xl font-extrabold text-slate-800 flex items-center gap-2">
-                <Sparkles className="text-violet-600" /> Análise IA
-              </h3>
-              <button onClick={() => setAiAnalysis(null)} className="text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-white rounded-full">
-                <XCircle size={28} />
-              </button>
-            </div>
-            <div className="p-8 overflow-y-auto prose prose-slate max-w-none">
-              <div className="whitespace-pre-line text-slate-700 leading-relaxed font-medium">
-                <ReactMarkdown>{aiAnalysis}</ReactMarkdown>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

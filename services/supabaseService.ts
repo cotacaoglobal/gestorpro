@@ -224,6 +224,47 @@ export const SupabaseService = {
         }
     },
 
+    deleteSale: async (saleId: string): Promise<void> => {
+        // Note: When deleting a sale, we should restore the stock.
+        // First, get the sale details
+        const { data: saleData, error: fetchError } = await supabase
+            .from('sales')
+            .select('*')
+            .eq('id', saleId)
+            .single();
+
+        if (fetchError) throw fetchError;
+
+        if (saleData) {
+            // Restore stock for each item
+            for (const item of saleData.items) {
+                const { data: product } = await supabase
+                    .from('products')
+                    .select('stock')
+                    .eq('id', item.id)
+                    .eq('tenant_id', saleData.tenant_id)
+                    .single();
+
+                if (product) {
+                    await supabase
+                        .from('products')
+                        .update({ stock: product.stock + item.quantity })
+                        .eq('id', item.id)
+                        .eq('tenant_id', saleData.tenant_id);
+                }
+            }
+        }
+
+        // Delete the sale
+        const { error } = await supabase
+            .from('sales')
+            .delete()
+            .eq('id', saleId);
+
+        if (error) throw error;
+    },
+
+
     // --- Users & Auth ---
     getUsers: async (tenantId: string): Promise<User[]> => {
         const { data, error } = await supabase
