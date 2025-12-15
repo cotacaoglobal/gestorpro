@@ -19,6 +19,9 @@ import { ProfileModal } from './components/ProfileModal';
 import { RegisterTenant } from './components/RegisterTenant';
 import { Product, Sale, ViewState, User } from './types';
 import { SupabaseService } from './services/supabaseService';
+import { AdminDashboard } from './components/admin/AdminDashboard';
+import { AdminLayout } from './components/admin/AdminLayout';
+import { AdminTenants, AdminPlans, AdminFinancial } from './components/admin/AdminPlaceholders';
 
 const App: React.FC = () => {
   const navigate = useNavigate();
@@ -39,9 +42,18 @@ const App: React.FC = () => {
       try {
         const parsedUser = JSON.parse(savedUser) as User;
         setUser(parsedUser);
-        const targetView = parsedUser.role === 'admin' ? 'DASHBOARD' : 'OPERATOR_HOME';
+        setUser(parsedUser);
+        let targetView: ViewState = 'OPERATOR_HOME';
+        if (parsedUser.role === 'admin') targetView = 'DASHBOARD';
+        if (parsedUser.role === 'super_admin') targetView = 'ADMIN_DASHBOARD';
+
         setView(targetView);
-        navigate(parsedUser.role === 'admin' ? '/dashboard' : '/operator', { replace: true });
+
+        if (parsedUser.role === 'super_admin') {
+          navigate('/admin/dashboard', { replace: true });
+        } else {
+          navigate(parsedUser.role === 'admin' ? '/dashboard' : '/operator', { replace: true });
+        }
       } catch (error) {
         console.error('Error parsing saved user:', error);
         localStorage.removeItem('gestorpro_user');
@@ -103,6 +115,11 @@ const App: React.FC = () => {
       setView('MANAGE_CATEGORIES');
     } else if (path === '/settings/notifications') {
       setView('NOTIFICATIONS');
+    } else if (path.startsWith('/admin')) {
+      if (path.includes('/tenants')) setView('ADMIN_TENANTS');
+      else if (path.includes('/plans')) setView('ADMIN_PLANS');
+      else if (path.includes('/financial')) setView('ADMIN_FINANCIAL');
+      else setView('ADMIN_DASHBOARD');
     }
 
     // Force remove dark mode class
@@ -113,6 +130,13 @@ const App: React.FC = () => {
     setUser(loggedInUser);
     // Save user to localStorage for session persistence
     localStorage.setItem('gestorpro_user', JSON.stringify(loggedInUser));
+
+    if (loggedInUser.role === 'super_admin') {
+      setView('ADMIN_DASHBOARD');
+      navigate('/admin/dashboard');
+      return;
+    }
+
     const targetView = loggedInUser.role === 'admin' ? 'DASHBOARD' : 'OPERATOR_HOME';
     setView(targetView);
     navigate(loggedInUser.role === 'admin' ? '/dashboard' : '/operator');
@@ -178,7 +202,11 @@ const App: React.FC = () => {
       'PRINTER_SETTINGS': '/settings/printer',
       'BACKUP_DATA': '/settings/backup',
       'MANAGE_CATEGORIES': '/settings/categories',
-      'NOTIFICATIONS': '/settings/notifications'
+      'NOTIFICATIONS': '/settings/notifications',
+      'ADMIN_DASHBOARD': '/admin/dashboard',
+      'ADMIN_TENANTS': '/admin/tenants',
+      'ADMIN_PLANS': '/admin/plans',
+      'ADMIN_FINANCIAL': '/admin/financial'
     };
     navigate(pathMap[newView] || '/dashboard');
   };
@@ -234,6 +262,20 @@ const App: React.FC = () => {
           navigate('/register');
         }}
       />
+    );
+  }
+
+  // SUPER ADMIN FLOW
+  if (user && user.role === 'super_admin') {
+    return (
+      <AdminLayout currentView={view} setView={handleViewChange} onLogout={handleLogout} user={user}>
+        {view === 'ADMIN_DASHBOARD' && <AdminDashboard />}
+        {view === 'ADMIN_TENANTS' && <AdminTenants />}
+        {view === 'ADMIN_PLANS' && <AdminPlans />}
+        {view === 'ADMIN_FINANCIAL' && <AdminFinancial />}
+        {/* Fallback */}
+        {(!view.startsWith('ADMIN_')) && <AdminDashboard />}
+      </AdminLayout>
     );
   }
 

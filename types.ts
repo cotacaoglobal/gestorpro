@@ -4,6 +4,47 @@ export interface Tenant {
   slug: string;
   plan: 'free' | 'pro' | 'enterprise';
   status: 'active' | 'suspended' | 'cancelled';
+  ownerName?: string; // Nome do responsável
+  ownerEmail?: string; // Email do responsável
+  createdAt?: string; // Data de criação
+}
+
+export interface SaasPlan {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  price: number;
+  limits: {
+    users: number;
+    products: number;
+    storage_mb?: number;
+    [key: string]: number | undefined;
+  };
+  features: string[];
+  active: boolean;
+}
+
+export interface SaasSubscription {
+  id: string;
+  tenantId: string;
+  planId: string;
+  status: 'active' | 'past_due' | 'canceled' | 'incomplete' | 'trialing';
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  plan?: SaasPlan; // Para join no frontend
+}
+
+export interface SaasInvoice {
+  id: string;
+  tenantId: string;
+  amount: number;
+  status: 'paid' | 'open' | 'void' | 'uncollectible';
+  invoiceUrl?: string;
+  dueDate: string;
+  paidAt?: string;
+  createdAt: string;
 }
 
 export interface Product {
@@ -58,7 +99,7 @@ export interface DashboardStats {
   lowStockCount: number;
 }
 
-export type Role = 'admin' | 'operator';
+export type Role = 'admin' | 'operator' | 'super_admin';
 
 export interface User {
   id: string;
@@ -96,4 +137,5 @@ export interface CashSession {
   };
 }
 
-export type ViewState = 'LOGIN' | 'REGISTER' | 'DASHBOARD' | 'INVENTORY' | 'POS' | 'HISTORY' | 'USERS' | 'OPERATOR_HOME' | 'CASH_MANAGEMENT' | 'DUPLICATE_CLEANUP' | 'STORE_SETTINGS' | 'PRINTER_SETTINGS' | 'BACKUP_DATA' | 'MANAGE_CATEGORIES' | 'NOTIFICATIONS';
+export type ViewState = 'LOGIN' | 'REGISTER' | 'DASHBOARD' | 'INVENTORY' | 'POS' | 'HISTORY' | 'USERS' | 'OPERATOR_HOME' | 'CASH_MANAGEMENT' | 'DUPLICATE_CLEANUP' | 'STORE_SETTINGS' | 'PRINTER_SETTINGS' | 'BACKUP_DATA' | 'MANAGE_CATEGORIES' | 'NOTIFICATIONS'
+  | 'ADMIN_DASHBOARD' | 'ADMIN_TENANTS' | 'ADMIN_PLANS' | 'ADMIN_FINANCIAL';

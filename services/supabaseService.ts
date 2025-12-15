@@ -351,24 +351,63 @@ export const SupabaseService = {
     },
 
     login: async (email: string, password: string): Promise<User | null> => {
-        const { data, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', email)
-            .eq('password_hash', password)
-            .single();
+        const cleanEmail = email.trim();
+        const cleanPassword = password.trim();
 
-        if (error || !data) return null;
+        console.log(`🔐 Tentando login para: ${cleanEmail}`);
 
-        return {
-            id: data.id,
-            tenantId: data.tenant_id,
-            name: data.name,
-            email: data.email,
-            passwordHash: data.password_hash,
-            role: data.role,
-            avatar: data.avatar,
-        };
+        try {
+            // Tenta login via RPC (Seguro e ignora RLS mal configurado)
+            const { data: rpcData, error: rpcError } = await supabase.rpc('login_user', {
+                input_email: cleanEmail,
+                input_password: cleanPassword
+            });
+
+            if (rpcError) {
+                console.error('❌ Erro no RPC de login:', rpcError);
+                // Fallback para query direta caso a função não exista (apenas para compatibilidade, mas o ideal é RPC)
+                // Se o RPC falhar pq a função não existe, o erro será "function ... does not exist"
+            }
+
+            let user = rpcData;
+
+            // Se RPC falhou ou não retornou nada, tenta o método antigo (direct query) como fallback temporário
+            if (!user) {
+                console.warn('⚠️ RPC falhou ou retornou vazio, tentando método direto...');
+                const { data: directData, error: directError } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('email', cleanEmail)
+                    .eq('password_hash', cleanPassword)
+                    .maybeSingle();
+
+                if (directError) console.error('❌ Erro no login direto:', directError);
+                user = directData;
+            }
+
+            if (!user) {
+                console.warn('⚠️ Usuário não encontrado ou senha incorreta (ambos métodos falharam)');
+                return null;
+            }
+
+            const data = user;
+
+
+            console.log('✅ Login bem-sucedido!', { email: data.email, role: data.role });
+
+            return {
+                id: data.id,
+                tenantId: data.tenant_id,
+                name: data.name,
+                email: data.email,
+                passwordHash: data.password_hash,
+                role: data.role as 'admin' | 'operator' | 'super_admin',
+                avatar: data.avatar,
+            };
+        } catch (err) {
+            console.error('💥 Erro fatal no login:', err);
+            return null;
+        }
     },
 
     // --- Cash Sessions ---
