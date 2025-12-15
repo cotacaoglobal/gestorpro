@@ -363,8 +363,12 @@ export const SupabaseService = {
             }
 
             if (data.user) {
-                // Fetch full profile from public.users
-                return SupabaseService.getCurrentUser();
+                // Fetch full profile from public.users and check tenant status
+                const userProfile = await SupabaseService.getCurrentUser();
+                if (!userProfile) { // Check failed (e.g. suspended)
+                    return null;
+                }
+                return userProfile;
             }
             return null;
         } catch (error) {
