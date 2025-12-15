@@ -19,9 +19,13 @@ import { ProfileModal } from './components/ProfileModal';
 import { RegisterTenant } from './components/RegisterTenant';
 import { Product, Sale, ViewState, User } from './types';
 import { SupabaseService } from './services/supabaseService';
+import { supabase } from './services/supabaseClient';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { AdminLayout } from './components/admin/AdminLayout';
-import { AdminTenants, AdminPlans, AdminFinancial } from './components/admin/AdminPlaceholders';
+import { AdminTenants } from './components/admin/AdminTenants';
+import { AdminPlans } from './components/admin/AdminPlans';
+import { AdminFinancial } from './components/admin/AdminFinancial';
+import { AdminSettings } from './components/admin/AdminSettings';
 
 const App: React.FC = () => {
   const navigate = useNavigate();
@@ -35,32 +39,43 @@ const App: React.FC = () => {
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>(undefined);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-  // Load user from localStorage on initial mount
+  // Load user from Supabase Auth
   useEffect(() => {
-    const savedUser = localStorage.getItem('gestorpro_user');
-    if (savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser) as User;
-        setUser(parsedUser);
-        setUser(parsedUser);
-        let targetView: ViewState = 'OPERATOR_HOME';
-        if (parsedUser.role === 'admin') targetView = 'DASHBOARD';
-        if (parsedUser.role === 'super_admin') targetView = 'ADMIN_DASHBOARD';
-
-        setView(targetView);
-
-        if (parsedUser.role === 'super_admin') {
-          navigate('/admin/dashboard', { replace: true });
-        } else {
-          navigate(parsedUser.role === 'admin' ? '/dashboard' : '/operator', { replace: true });
-        }
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('gestorpro_user');
+    // 1. Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        SupabaseService.getCurrentUser().then(userProfile => {
+          if (userProfile) {
+            handleLogin(userProfile); // Reuse login logic for routing
+          }
+        });
+      } else {
+        setLoading(false);
       }
-    }
-    setLoading(false);
-  }, []);
+    });
+
+    // 2. Listen for changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session) {
+        // Optionally re-fetch profile if needed, or handleLogin handles it.
+        // handleLogin is smart enough to set state.
+        // But here we might just want to ensure we have the profile if user is null
+        if (!user) {
+          const userProfile = await SupabaseService.getCurrentUser();
+          if (userProfile) handleLogin(userProfile);
+        }
+      } else {
+        // Sign out
+        setUser(null);
+        setView('LOGIN');
+        setActiveSessionId(undefined);
+        localStorage.removeItem('gestorpro_user'); // Clean up just in case
+        navigate('/login');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []); // Run once on mount
 
   const loadData = async () => {
     if (!user?.tenantId) return;
@@ -119,6 +134,7 @@ const App: React.FC = () => {
       if (path.includes('/tenants')) setView('ADMIN_TENANTS');
       else if (path.includes('/plans')) setView('ADMIN_PLANS');
       else if (path.includes('/financial')) setView('ADMIN_FINANCIAL');
+      else if (path.includes('/settings')) setView('ADMIN_SETTINGS');
       else setView('ADMIN_DASHBOARD');
     }
 
@@ -142,11 +158,11 @@ const App: React.FC = () => {
     navigate(loggedInUser.role === 'admin' ? '/dashboard' : '/operator');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await SupabaseService.logout();
     setUser(null);
     setView('LOGIN');
     setActiveSessionId(undefined);
-    // Remove user from localStorage
     localStorage.removeItem('gestorpro_user');
     navigate('/login');
   };
@@ -206,7 +222,8 @@ const App: React.FC = () => {
       'ADMIN_DASHBOARD': '/admin/dashboard',
       'ADMIN_TENANTS': '/admin/tenants',
       'ADMIN_PLANS': '/admin/plans',
-      'ADMIN_FINANCIAL': '/admin/financial'
+      'ADMIN_FINANCIAL': '/admin/financial',
+      'ADMIN_SETTINGS': '/admin/settings'
     };
     navigate(pathMap[newView] || '/dashboard');
   };
@@ -273,6 +290,7 @@ const App: React.FC = () => {
         {view === 'ADMIN_TENANTS' && <AdminTenants />}
         {view === 'ADMIN_PLANS' && <AdminPlans />}
         {view === 'ADMIN_FINANCIAL' && <AdminFinancial />}
+        {view === 'ADMIN_SETTINGS' && <AdminSettings />}
         {/* Fallback */}
         {(!view.startsWith('ADMIN_')) && <AdminDashboard />}
       </AdminLayout>

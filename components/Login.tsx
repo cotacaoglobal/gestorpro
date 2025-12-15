@@ -18,16 +18,27 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onRegister }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(''); // Clear previous errors
+
+    // Validar formato de email antes de enviar
+    if (!email.includes('@')) {
+      setError('Por favor, insira um email válido.');
+      return;
+    }
+
     try {
       const user = await SupabaseService.login(email, password);
+      // NOTE: With the new flow, SupabaseService.login returns the user profile
+      // If null, it means login failed.
       if (user) {
         onLogin(user);
       } else {
-        setError('Credenciais inválidas.');
+        // More specific error based on what usually happens with Auth
+        setError('Email ou senha incorretos.');
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError('Erro ao fazer login. Tente novamente.');
+      setError('Erro de conexão. Tente novamente.');
     }
   };
 

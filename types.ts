@@ -99,6 +99,14 @@ export interface DashboardStats {
   lowStockCount: number;
 }
 
+export interface SaasStats {
+  totalRevenue: number;
+  totalTenants: number;
+  newTenantsMonth: number;
+  activeSubscriptions: number;
+  churnRate?: number;
+}
+
 export type Role = 'admin' | 'operator' | 'super_admin';
 
 export interface User {
@@ -138,4 +146,4 @@ export interface CashSession {
 }
 
 export type ViewState = 'LOGIN' | 'REGISTER' | 'DASHBOARD' | 'INVENTORY' | 'POS' | 'HISTORY' | 'USERS' | 'OPERATOR_HOME' | 'CASH_MANAGEMENT' | 'DUPLICATE_CLEANUP' | 'STORE_SETTINGS' | 'PRINTER_SETTINGS' | 'BACKUP_DATA' | 'MANAGE_CATEGORIES' | 'NOTIFICATIONS'
-  | 'ADMIN_DASHBOARD' | 'ADMIN_TENANTS' | 'ADMIN_PLANS' | 'ADMIN_FINANCIAL';
+  | 'ADMIN_DASHBOARD' | 'ADMIN_TENANTS' | 'ADMIN_PLANS' | 'ADMIN_FINANCIAL' | 'ADMIN_SETTINGS';

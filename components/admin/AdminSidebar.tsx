@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Users, CreditCard, Layers, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Layers, LogOut, Settings } from 'lucide-react';
 import { ViewState } from '../../types';
 
 interface AdminSidebarProps {
@@ -14,6 +14,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, setView
         { id: 'ADMIN_TENANTS', label: 'Clientes (Tenants)', icon: Users },
         { id: 'ADMIN_PLANS', label: 'Planos e Limites', icon: Layers },
         { id: 'ADMIN_FINANCIAL', label: 'Financeiro', icon: CreditCard },
+        { id: 'ADMIN_SETTINGS', label: 'Configurações', icon: Settings },
     ];
 
     return (
@@ -34,8 +35,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, setView
                             key={item.id}
                             onClick={() => setView(item.id as ViewState)}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${isActive
-                                    ? 'bg-blue-600 text-white shadow-lg translate-x-1'
-                                    : 'text-gray-400 hover:bg-[#2A2A3C] hover:text-white'
+                                ? 'bg-blue-600 text-white shadow-lg translate-x-1'
+                                : 'text-gray-400 hover:bg-[#2A2A3C] hover:text-white'
                                 }`}
                         >
                             <item.icon size={20} />

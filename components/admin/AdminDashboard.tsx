@@ -1,13 +1,60 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Users, DollarSign, AlertCircle, TrendingUp } from 'lucide-react';
+import { SupabaseService } from '../../services/supabaseService';
+import { SaasStats } from '../../types';
 
 export const AdminDashboard: React.FC = () => {
-    // MOCK DATA - Futuramente virá do Supabase
-    const stats = [
-        { label: 'MRR (Receita Mensal)', value: 'R$ 15.490', change: '+12%', icon: DollarSign, color: 'emerald' },
-        { label: 'Tenants Ativos', value: '142', change: '+8', icon: Users, color: 'blue' },
-        { label: 'Novos no Mês', value: '15', change: '+3', icon: TrendingUp, color: 'violet' },
-        { label: 'Assinaturas Vencidas', value: '4', change: '-1', icon: AlertCircle, color: 'red' },
+    const [stats, setStats] = useState<SaasStats | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        loadStats();
+    }, []);
+
+    const loadStats = async () => {
+        try {
+            const data = await SupabaseService.getSaaSStats();
+            setStats(data);
+        } catch (error) {
+            console.error('Error loading SaaS stats:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return <div className="p-8 text-center text-gray-500">Carregando métricas...</div>;
+    }
+
+    const statCards = [
+        {
+            label: 'MRR (Estimado)',
+            value: `R$ ${(stats?.totalRevenue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            change: '---',
+            icon: DollarSign,
+            color: 'emerald'
+        },
+        {
+            label: 'Tenants Ativos',
+            value: stats?.totalTenants.toString() || '0',
+            change: `+${stats?.newTenantsMonth || 0} este mês`,
+            icon: Users,
+            color: 'blue'
+        },
+        {
+            label: 'Novos no Mês',
+            value: stats?.newTenantsMonth.toString() || '0',
+            change: '---',
+            icon: TrendingUp,
+            color: 'violet'
+        },
+        {
+            label: 'Assinaturas Ativas',
+            value: stats?.activeSubscriptions.toString() || '0',
+            change: '---',
+            icon: AlertCircle,
+            color: 'red'
+        },
     ];
 
     return (
@@ -19,13 +66,13 @@ export const AdminDashboard: React.FC = () => {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {stats.map((stat, idx) => (
+                {statCards.map((stat, idx) => (
                     <div key={idx} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start justify-between hover:shadow-md transition-shadow">
                         <div>
                             <p className="text-sm text-gray-500 font-medium mb-1">{stat.label}</p>
                             <h3 className="text-2xl font-bold text-gray-800">{stat.value}</h3>
-                            <span className={`text-xs font-semibold ${stat.change.startsWith('+') ? 'text-green-600' : 'text-red-500'}`}>
-                                {stat.change} vs mês anterior
+                            <span className={`text-xs font-semibold ${stat.change.startsWith('+') ? 'text-green-600' : 'text-gray-400'}`}>
+                                {stat.change}
                             </span>
                         </div>
                         <div className={`p-3 rounded-lg bg-${stat.color}-50 text-${stat.color}-600`}>
@@ -35,50 +82,26 @@ export const AdminDashboard: React.FC = () => {
                 ))}
             </div>
 
-            {/* Recentes Section */}
+            {/* Recentes Section - Placeholder for now, or could fetch recent tenants */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="font-bold text-gray-800">Últimos Cadastros</h2>
-                        <button className="text-sm text-blue-600 hover:underline">Ver todos</button>
+                        {/* <button className="text-sm text-blue-600 hover:underline">Ver todos</button> */}
                     </div>
-                    {/* Tabela Simplificada */}
-                    <div className="space-y-4">
-                        {[1, 2, 3].map(i => (
-                            <div key={i} className="flex items-center justify-between py-2 border-b last:border-0 border-gray-50">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 uppercase">M{i}</div>
-                                    <div>
-                                        <p className="font-medium text-gray-800">Mercadinho Exemplo {i}</p>
-                                        <p className="text-xs text-gray-500">Plano Pro • Desde 12/12/2025</p>
-                                    </div>
-                                </div>
-                                <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Ativo</span>
-                            </div>
-                        ))}
+
+                    <div className="text-center py-8 text-gray-400 text-sm">
+                        Implementação de lista recente em breve.
                     </div>
                 </div>
 
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="font-bold text-gray-800">Alerta de Inadimplência</h2>
-                        <button className="text-sm text-blue-600 hover:underline">Financeiro</button>
+                        {/* <button className="text-sm text-blue-600 hover:underline">Financeiro</button> */}
                     </div>
-                    <div className="space-y-4">
-                        {[1, 2].map(i => (
-                            <div key={i} className="flex items-center justify-between py-2 border-b last:border-0 border-gray-50">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-500">
-                                        <AlertCircle size={20} />
-                                    </div>
-                                    <div>
-                                        <p className="font-medium text-gray-800">Padaria do João</p>
-                                        <p className="text-xs text-red-500">Vencido há 5 dias</p>
-                                    </div>
-                                </div>
-                                <button className="text-sm font-semibold text-blue-600 hover:underline">Ver Fatura</button>
-                            </div>
-                        ))}
+                    <div className="text-center py-8 text-gray-400 text-sm">
+                        Módulo financeiro em desenvolvimento.
                     </div>
                 </div>
             </div>

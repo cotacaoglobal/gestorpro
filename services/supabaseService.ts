@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import { Product, Sale, User, CashSession, CashMovement } from '../types';
+import { Product, Sale, User, CashSession, CashMovement, Tenant, SaasStats, SaasPlan, SaasInvoice } from '../types';
 
 export const SupabaseService = {
     // --- Products ---
@@ -351,64 +351,60 @@ export const SupabaseService = {
     },
 
     login: async (email: string, password: string): Promise<User | null> => {
-        const cleanEmail = email.trim();
-        const cleanPassword = password.trim();
-
-        console.log(`🔐 Tentando login para: ${cleanEmail}`);
-
         try {
-            // Tenta login via RPC (Seguro e ignora RLS mal configurado)
-            const { data: rpcData, error: rpcError } = await supabase.rpc('login_user', {
-                input_email: cleanEmail,
-                input_password: cleanPassword
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
             });
 
-            if (rpcError) {
-                console.error('❌ Erro no RPC de login:', rpcError);
-                // Fallback para query direta caso a função não exista (apenas para compatibilidade, mas o ideal é RPC)
-                // Se o RPC falhar pq a função não existe, o erro será "function ... does not exist"
-            }
-
-            let user = rpcData;
-
-            // Se RPC falhou ou não retornou nada, tenta o método antigo (direct query) como fallback temporário
-            if (!user) {
-                console.warn('⚠️ RPC falhou ou retornou vazio, tentando método direto...');
-                const { data: directData, error: directError } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('email', cleanEmail)
-                    .eq('password_hash', cleanPassword)
-                    .maybeSingle();
-
-                if (directError) console.error('❌ Erro no login direto:', directError);
-                user = directData;
-            }
-
-            if (!user) {
-                console.warn('⚠️ Usuário não encontrado ou senha incorreta (ambos métodos falharam)');
+            if (error) {
+                console.error('Error logging in:', error.message);
                 return null;
             }
 
-            const data = user;
-
-
-            console.log('✅ Login bem-sucedido!', { email: data.email, role: data.role });
-
-            return {
-                id: data.id,
-                tenantId: data.tenant_id,
-                name: data.name,
-                email: data.email,
-                passwordHash: data.password_hash,
-                role: data.role as 'admin' | 'operator' | 'super_admin',
-                avatar: data.avatar,
-            };
-        } catch (err) {
-            console.error('💥 Erro fatal no login:', err);
+            if (data.user) {
+                // Fetch full profile from public.users
+                return SupabaseService.getCurrentUser();
+            }
+            return null;
+        } catch (error) {
+            console.error('Unexpected error during login:', error);
             return null;
         }
     },
+
+    logout: async (): Promise<void> => {
+        const { error } = await supabase.auth.signOut();
+        if (error) console.error('Error logging out:', error);
+    },
+
+    getCurrentUser: async (): Promise<User | null> => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return null;
+
+        const { data: profile, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+        if (error || !profile) {
+            // If profile is missing but auth exists (edge case), try to use metadata or return null
+            console.warn('Profile not found for authenticated user:', error);
+            return null;
+        }
+
+        return {
+            id: profile.id,
+            tenantId: profile.tenant_id,
+            name: profile.name,
+            email: profile.email,
+            passwordHash: '', // Never return hash
+            role: profile.role as 'admin' | 'operator' | 'super_admin',
+            avatar: profile.avatar,
+        };
+    },
+
 
     // --- Cash Sessions ---
     getSessions: async (tenantId: string): Promise<CashSession[]> => {
@@ -562,7 +558,7 @@ export const SupabaseService = {
         ownerPassword: string,
         companyName: string
     ): Promise<{ success: boolean; error?: string }> => {
-        // Generate slug from company name (basic version)
+        // Generate slug from company name
         const companySlug = companyName
             .toLowerCase()
             .trim()
@@ -570,24 +566,282 @@ export const SupabaseService = {
             .replace(/[\s_-]+/g, '-')
             .replace(/^-+|-+$/g, '');
 
-        const { data, error } = await supabase.rpc('register_tenant', {
-            owner_name: ownerName,
-            owner_email: ownerEmail,
-            owner_password: ownerPassword,
-            company_name: companyName,
-            company_slug: companySlug,
-        });
+        try {
+            // 1. Create Tenant (public table) - needs to happen first or via RPC? 
+            // Better to use the RPC if it works, BUT RPC 'register_tenant' was for custom users.
+            // We need a NEW registration flow that uses Supabase Auth.
 
-        if (error) {
-            console.error('Registration RPC error:', error);
-            // Translate common errors
-            if (error.message === 'EMAIL_TAKEN') return { success: false, error: 'EMAIL_TAKEN' };
-            if (error.message === 'SLUG_TAKEN') return { success: false, error: 'SLUG_TAKEN' };
-            return { success: false, error: error.message };
+            // NOTE: Standard flow is: 
+            // 1. User Sign Up -> auth.users
+            // 2. Trigger -> public.users
+            // 3. User creates Tenant? 
+
+            // To simplify, we will stick with `register_tenant` RPC but we need to update it 
+            // OR use a client-side multi-step process.
+            // Given the existing RPC does custom user insert, we SHOULD use client-side sign up.
+
+            // Step 1: Sign up user
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email: ownerEmail,
+                password: ownerPassword,
+                options: {
+                    data: {
+                        name: ownerName,
+                        role: 'admin', // Owner is admin
+                        // we don't have tenantId yet, it will be null initially? 
+                        // Or we need to create tenant first?
+                    }
+                }
+            });
+
+            if (authError) return { success: false, error: authError.message };
+            if (!authData.user) return { success: false, error: 'User creation failed' };
+
+            // Step 2: Create Tenant
+            const { data: tenantData, error: tenantError } = await supabase
+                .from('tenants')
+                .insert({
+                    name: companyName,
+                    slug: companySlug,
+                    plan: 'free',
+                    status: 'active'
+                })
+                .select()
+                .single();
+
+            if (tenantError) return { success: false, error: tenantError.message };
+
+            // Step 3: Update user with tenantId
+            // The trigger might have already run. We update the profile.
+            const { error: updateError } = await supabase
+                .from('users')
+                .update({
+                    tenant_id: tenantData.id,
+                    role: 'admin'
+                })
+                .eq('id', authData.user.id);
+
+            if (updateError) return { success: false, error: updateError.message };
+
+            return { success: true };
+
+        } catch (err: any) {
+            console.error('Registration error:', err);
+            return { success: false, error: err.message };
         }
+    },
 
-        // Check the returned JSON structure if needed, but the RPC returns consistent structure
-        const result = data as { success: boolean; error?: string };
-        return result;
+    // --- SaaS Admin ---
+    getTenants: async (): Promise<Tenant[]> => {
+        // Query to get tenants with their owner info
+        // Note: This assumes a relationship or we fetch users separately.
+        // For now, fetching tenants simply.
+        const { data, error } = await supabase
+            .from('tenants')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Fetch owners for these tenants (assuming users table has tenant_id)
+        // This is a bit inefficient but works for smaller lists.
+        // A better way would be a join if configured in DB.
+        const tenants: Tenant[] = await Promise.all((data || []).map(async (t) => {
+            const { data: owner } = await supabase
+                .from('users')
+                .select('name, email')
+                .eq('tenant_id', t.id)
+                .eq('role', 'admin') // Assuming admin is the owner
+                .limit(1)
+                .maybeSingle();
+
+            return {
+                id: t.id,
+                name: t.name,
+                slug: t.slug,
+                plan: t.plan || 'free',
+                status: t.status || 'active',
+                createdAt: t.created_at,
+                ownerName: owner?.name,
+                ownerEmail: owner?.email,
+            };
+        }));
+
+        return tenants;
+    },
+
+    updateTenantStatus: async (tenantId: string, status: 'active' | 'suspended'): Promise<void> => {
+        const { error } = await supabase
+            .from('tenants')
+            .update({ status })
+            .eq('id', tenantId);
+
+        if (error) throw error;
+    },
+
+    deleteTenant: async (tenantId: string): Promise<void> => {
+        const { error } = await supabase
+            .from('tenants')
+            .delete()
+            .eq('id', tenantId);
+
+        if (error) throw error;
+    },
+
+    getSaaSStats: async (): Promise<SaasStats> => {
+        // Get total tenants
+        const { count: totalTenants, error: tenantError } = await supabase
+            .from('tenants')
+            .select('*', { count: 'exact', head: true });
+
+        if (tenantError) throw tenantError;
+
+        // Get new tenants this month
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const { count: newTenants, error: newTenantError } = await supabase
+            .from('tenants')
+            .select('*', { count: 'exact', head: true })
+            .gte('created_at', startOfMonth.toISOString());
+
+        if (newTenantError) throw newTenantError;
+
+        return {
+            totalRevenue: 0, // Not implemented yet
+            totalTenants: totalTenants || 0,
+            newTenantsMonth: newTenants || 0,
+            activeSubscriptions: 0, // Not implemented yet
+        };
+    },
+
+    // --- Plans Management ---
+    getPlans: async (): Promise<SaasPlan[]> => {
+        const { data, error } = await supabase
+            .from('saas_plans')
+            .select('*')
+            .order('price', { ascending: true });
+
+        if (error) throw error;
+
+        return (data || []).map(p => ({
+            id: p.id,
+            name: p.name,
+            slug: p.slug,
+            description: p.description,
+            price: parseFloat(p.price),
+            limits: p.limits || {},
+            features: p.features || [],
+            active: p.active ?? true,
+        }));
+    },
+
+    createPlan: async (plan: Omit<SaasPlan, 'id'>): Promise<SaasPlan> => {
+        const { data, error } = await supabase
+            .from('saas_plans')
+            .insert({
+                name: plan.name,
+                slug: plan.slug,
+                description: plan.description,
+                price: plan.price,
+                limits: plan.limits,
+                features: plan.features,
+                active: plan.active,
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        return {
+            id: data.id,
+            name: data.name,
+            slug: data.slug,
+            description: data.description,
+            price: parseFloat(data.price),
+            limits: data.limits || {},
+            features: data.features || [],
+            active: data.active ?? true,
+        };
+    },
+
+    updatePlan: async (plan: SaasPlan): Promise<SaasPlan> => {
+        const { data, error } = await supabase
+            .from('saas_plans')
+            .update({
+                name: plan.name,
+                slug: plan.slug,
+                description: plan.description,
+                price: plan.price,
+                limits: plan.limits,
+                features: plan.features,
+                active: plan.active,
+            })
+            .eq('id', plan.id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        return {
+            id: data.id,
+            name: data.name,
+            slug: data.slug,
+            description: data.description,
+            price: parseFloat(data.price),
+            limits: data.limits || {},
+            features: data.features || [],
+            active: data.active ?? true,
+        };
+    },
+
+    deletePlan: async (planId: string): Promise<void> => {
+        const { error } = await supabase
+            .from('saas_plans')
+            .delete()
+            .eq('id', planId);
+
+        if (error) throw error;
+    },
+
+    // --- Financial ---
+    getInvoices: async (): Promise<SaasInvoice[]> => {
+        const { data, error } = await supabase
+            .from('saas_invoices')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        return (data || []).map(inv => ({
+            id: inv.id,
+            tenantId: inv.tenant_id,
+            amount: parseFloat(inv.amount),
+            status: inv.status,
+            invoiceUrl: inv.invoice_url,
+            dueDate: inv.due_date,
+            paidAt: inv.paid_at,
+            createdAt: inv.created_at,
+        }));
+    },
+
+    getRevenueStats: async (): Promise<{ mrr: number; arr: number }> => {
+        // Calculate MRR from active subscriptions
+        const { data: subscriptions, error } = await supabase
+            .from('saas_subscriptions')
+            .select('plan_id, saas_plans(price)')
+            .eq('status', 'active');
+
+        if (error) throw error;
+
+        const mrr = (subscriptions || []).reduce((sum, sub: any) => {
+            return sum + (parseFloat(sub.saas_plans?.price) || 0);
+        }, 0);
+
+        return {
+            mrr,
+            arr: mrr * 12,
+        };
     },
 };
