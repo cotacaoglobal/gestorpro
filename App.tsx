@@ -46,8 +46,16 @@ const App: React.FC = () => {
       if (session) {
         SupabaseService.getCurrentUser().then(userProfile => {
           if (userProfile) {
-            handleLogin(userProfile); // Reuse login logic for routing
+            handleLogin(userProfile);
+          } else {
+            // Session exists but profile fetch failed (or RLS issue) -> treat as not logged in
+            console.warn('Session valid but profile not found. Logging out.');
+            SupabaseService.logout();
           }
+        }).catch(err => {
+          console.error('Error fetching profile during init:', err);
+        }).finally(() => {
+          setLoading(false); // ALWAYS stop loading
         });
       } else {
         setLoading(false);
@@ -55,23 +63,17 @@ const App: React.FC = () => {
     });
 
     // 2. Listen for changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session) {
-        // Optionally re-fetch profile if needed, or handleLogin handles it.
-        // handleLogin is smart enough to set state.
-        // But here we might just want to ensure we have the profile if user is null
-        if (!user) {
-          const userProfile = await SupabaseService.getCurrentUser();
-          if (userProfile) handleLogin(userProfile);
-        }
-      } else {
-        // Sign out
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Only handle SIGN_IN/OUT here to avoid conflicting with initial load
+      if (event === 'SIGNED_OUT') {
         setUser(null);
         setView('LOGIN');
         setActiveSessionId(undefined);
-        localStorage.removeItem('gestorpro_user'); // Clean up just in case
+        localStorage.removeItem('gestorpro_user');
         navigate('/login');
       }
+      // Note: SIGNED_IN is handled by the initial check or the Login component calling handleLogin.
+      // However, if auto-refresh happens, we might want to update.
     });
 
     return () => subscription.unsubscribe();
