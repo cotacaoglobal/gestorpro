@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Package, History, Users, LogOut, Disc, UserCircle, DollarSign, ShieldAlert, Settings, ChevronDown, ChevronRight, Store, Printer, Database, Folder, Bell } from 'lucide-react';
+import { LayoutDashboard, Package, History, Users, LogOut, Disc, UserCircle, DollarSign, ShieldAlert, Settings, ChevronDown, ChevronRight, Store, Printer, Database, Folder, Bell, Crown } from 'lucide-react';
 import { ViewState, User } from '../types';
 
 interface SidebarProps {
@@ -30,6 +30,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   if (isAdmin) {
     menuItems.push({ id: 'CASH_MANAGEMENT', label: 'Caixa', icon: DollarSign });
     menuItems.push({ id: 'USERS', label: 'Usuários', icon: Users });
+    menuItems.push({ id: 'SUBSCRIPTION', label: 'Assinatura', icon: Crown });
   }
 
   const configItems = [

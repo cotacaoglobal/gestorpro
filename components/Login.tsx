@@ -15,6 +15,18 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onRegister }) => {
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [recoveryEmail, setRecoveryEmail] = useState('');
   const [recoverySuccess, setRecoverySuccess] = useState(false);
+  const [logoutReason, setLogoutReason] = useState('');
+
+  // Verificar se há mensagem de bloqueio ao montar componente
+  React.useEffect(() => {
+    const reason = localStorage.getItem('logout_reason');
+    if (reason) {
+      setLogoutReason(reason);
+      localStorage.removeItem('logout_reason');
+      // Auto-limpar após 10 segundos
+      setTimeout(() => setLogoutReason(''), 10000);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,6 +146,23 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onRegister }) => {
           <p className="text-slate-500 mb-10">Faça login para acessar sua conta.</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {logoutReason && (
+              <div className="bg-amber-50 text-amber-800 px-4 py-4 rounded-2xl text-sm border-2 border-amber-200 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-white text-xs font-bold">!</span>
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-amber-900 mb-1">Acesso Bloqueado</p>
+                  <p>{logoutReason}</p>
+                </div>
+                <button
+                  onClick={() => setLogoutReason('')}
+                  className="text-amber-600 hover:text-amber-800"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            )}
             {error && (
               <div className="bg-rose-50 text-rose-600 px-4 py-3 rounded-2xl text-sm font-bold border border-rose-100 flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div> {error}

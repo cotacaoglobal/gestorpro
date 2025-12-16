@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import { Product, Sale, User, CashSession, CashMovement, Tenant, SaasStats, SaasPlan, SaasInvoice } from '../types';
+import { Product, Sale, User, CashSession, CashMovement, Tenant, SaasStats, SaasPlan, SaasInvoice, Subscription, PaymentTransaction } from '../types';
 
 export const SupabaseService = {
     // --- Products ---
@@ -396,6 +396,73 @@ export const SupabaseService = {
             // If profile is missing but auth exists (edge case), try to use metadata or return null
             console.warn('Profile not found for authenticated user:', error);
             return null;
+        }
+
+        // Verificar se o tenant está suspenso (apenas para não-super-admins)
+        if (profile.tenant_id && profile.role !== 'super_admin') {
+            const { data: tenant } = await supabase
+                .from('tenants')
+                .select('status')
+                .eq('id', profile.tenant_id)
+                .single();
+
+            if (tenant && tenant.status === 'suspended') {
+                console.error('🚨 Tenant suspenso. Fazendo logout automático.');
+                localStorage.setItem('logout_reason', 'Sua conta foi suspensa. Entre em contato com o suporte.');
+                await SupabaseService.logout();
+                return null;
+            }
+
+            // Verificar se a assinatura está válida
+            const { data: subscription } = await supabase
+                .from('subscriptions')
+                .select('status, trial_ends_at, expires_at')
+                .eq('tenant_id', profile.tenant_id)
+                .single();
+
+            if (subscription) {
+                const now = new Date();
+                let subscriptionInvalid = false;
+                let reason = '';
+
+                // Verificar se está cancelada ou expirada
+                if (subscription.status === 'cancelled') {
+                    subscriptionInvalid = true;
+                    reason = 'Sua assinatura foi cancelada. Renove para continuar usando o sistema.';
+                } else if (subscription.status === 'expired') {
+                    subscriptionInvalid = true;
+                    reason = 'Sua assinatura expirou. Renove para continuar usando o sistema.';
+                }
+                // Verificar se trial expirou
+                else if (subscription.status === 'trial' && subscription.trial_ends_at) {
+                    const trialEnd = new Date(subscription.trial_ends_at);
+                    if (trialEnd < now) {
+                        subscriptionInvalid = true;
+                        reason = 'Seu período de teste expirou. Assine um plano para continuar.';
+                    }
+                }
+                // Verificar se assinatura ativa expirou
+                else if (subscription.status === 'active' && subscription.expires_at) {
+                    const expireDate = new Date(subscription.expires_at);
+                    if (expireDate < now) {
+                        subscriptionInvalid = true;
+                        reason = 'Sua assinatura expirou. Renove para continuar usando o sistema.';
+                    }
+                }
+
+                if (subscriptionInvalid) {
+                    console.error(`🚨 ${reason}`);
+                    localStorage.setItem('logout_reason', reason);
+                    await SupabaseService.logout();
+                    return null;
+                }
+            } else {
+                // Se não tem assinatura, bloqueia também
+                console.error('🚨 Nenhuma assinatura encontrada. Bloqueando acesso.');
+                localStorage.setItem('logout_reason', 'Nenhuma assinatura ativa encontrada. Entre em contato com o suporte.');
+                await SupabaseService.logout();
+                return null;
+            }
         }
 
         return {
@@ -846,6 +913,245 @@ export const SupabaseService = {
         return {
             mrr,
             arr: mrr * 12,
+        };
+    },
+
+    // --- Subscription Management ---
+    getSubscription: async (tenantId: string): Promise<Subscription | null> => {
+        const { data, error } = await supabase
+            .from('tenant_subscriptions_view')
+            .select('*')
+            .eq('tenant_id', tenantId)
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') return null; // Not found
+            throw error;
+        }
+
+        if (!data) return null;
+
+        return {
+            id: data.subscription_id,
+            tenantId: data.tenant_id,
+            planId: data.plan_id,
+            status: data.subscription_status,
+            startedAt: data.started_at,
+            trialEndsAt: data.trial_ends_at,
+            expiresAt: data.expires_at,
+            cancelledAt: data.cancelled_at,
+            autoRenew: data.auto_renew,
+            planName: data.plan_name,
+            planPrice: parseFloat(data.plan_price),
+            planLimits: data.plan_limits || {},
+            planFeatures: data.plan_features || [],
+        };
+    },
+
+    createSubscription: async (
+        tenantId: string,
+        planId: string,
+        trialDays: number = 7
+    ): Promise<Subscription> => {
+        const trialEndsAt = new Date();
+        trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
+
+        const { data, error } = await supabase
+            .from('subscriptions')
+            .insert({
+                tenant_id: tenantId,
+                plan_id: planId,
+                status: 'trial',
+                trial_ends_at: trialEndsAt.toISOString(),
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        return {
+            id: data.id,
+            tenantId: data.tenant_id,
+            planId: data.plan_id,
+            status: data.status,
+            startedAt: data.started_at,
+            trialEndsAt: data.trial_ends_at,
+            expiresAt: data.expires_at,
+            cancelledAt: data.cancelled_at,
+            autoRenew: data.auto_renew,
+        };
+    },
+
+    activateSubscription: async (
+        tenantId: string,
+        durationMonths: number = 1
+    ): Promise<void> => {
+        const expiresAt = new Date();
+        expiresAt.setMonth(expiresAt.getMonth() + durationMonths);
+
+        const { error } = await supabase
+            .from('subscriptions')
+            .update({
+                status: 'active',
+                expires_at: expiresAt.toISOString(),
+            })
+            .eq('tenant_id', tenantId);
+
+        if (error) throw error;
+    },
+
+    updateSubscriptionPlan: async (
+        tenantId: string,
+        newPlanId: string
+    ): Promise<void> => {
+        const { error } = await supabase
+            .from('subscriptions')
+            .update({
+                plan_id: newPlanId,
+            })
+            .eq('tenant_id', tenantId);
+
+        if (error) throw error;
+    },
+
+    cancelSubscription: async (tenantId: string): Promise<void> => {
+        const { error } = await supabase
+            .from('subscriptions')
+            .update({
+                status: 'cancelled',
+                cancelled_at: new Date().toISOString(),
+            })
+            .eq('tenant_id', tenantId);
+
+        if (error) throw error;
+    },
+
+    renewSubscription: async (
+        tenantId: string,
+        durationMonths: number = 1
+    ): Promise<void> => {
+        const expiresAt = new Date();
+        expiresAt.setMonth(expiresAt.getMonth() + durationMonths);
+
+        const { error } = await supabase
+            .from('subscriptions')
+            .update({
+                status: 'active',
+                expires_at: expiresAt.toISOString(),
+            })
+            .eq('tenant_id', tenantId);
+
+        if (error) throw error;
+    },
+
+    extendTrial: async (tenantId: string, additionalDays: number): Promise<void> => {
+        // Get current trial_ends_at
+        const { data: current } = await supabase
+            .from('subscriptions')
+            .select('trial_ends_at')
+            .eq('tenant_id', tenantId)
+            .single();
+
+        const newTrialEnd = current?.trial_ends_at
+            ? new Date(current.trial_ends_at)
+            : new Date();
+
+        newTrialEnd.setDate(newTrialEnd.getDate() + additionalDays);
+
+        const { error } = await supabase
+            .from('subscriptions')
+            .update({
+                trial_ends_at: newTrialEnd.toISOString(),
+            })
+            .eq('tenant_id', tenantId);
+
+        if (error) throw error;
+    },
+
+    // --- Payment Methods ---
+    createPayment: async (
+        tenantId: string,
+        planId: string,
+        subscriptionId?: string
+    ): Promise<{ paymentLink: string; transactionId: string }> => {
+        // Chamar Edge Function para criar preferência no MP
+        const { data, error } = await supabase.functions.invoke('create-mp-payment', {
+            body: {
+                tenantId,
+                planId,
+                subscriptionId,
+            },
+        });
+
+        if (error) throw error;
+
+        return {
+            paymentLink: data.paymentLink,
+            transactionId: data.transactionId,
+        };
+    },
+
+    getPaymentTransactions: async (tenantId: string): Promise<PaymentTransaction[]> => {
+        const { data, error } = await supabase
+            .from('tenant_payments_view')
+            .select('*')
+            .eq('tenant_id', tenantId)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        return (data || []).map(t => ({
+            id: t.transaction_id,
+            tenantId: t.tenant_id,
+            subscriptionId: t.subscription_id,
+            planId: t.plan_id,
+            amount: parseFloat(t.amount),
+            currency: t.currency,
+            status: t.status,
+            mpPaymentType: t.mp_payment_type,
+            mpPaymentMethod: t.mp_payment_method,
+            description: t.description,
+            createdAt: t.created_at,
+            paidAt: t.paid_at,
+            expiresAt: t.expires_at,
+            tenantName: t.tenant_name,
+            planName: t.plan_name,
+            planPrice: t.plan_price,
+        }));
+    },
+
+    getPaymentTransaction: async (transactionId: string): Promise<PaymentTransaction | null> => {
+        const { data, error } = await supabase
+            .from('payment_transactions')
+            .select('*')
+            .eq('id', transactionId)
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') return null;
+            throw error;
+        }
+
+        return {
+            id: data.id,
+            tenantId: data.tenant_id,
+            subscriptionId: data.subscription_id,
+            planId: data.plan_id,
+            amount: parseFloat(data.amount),
+            currency: data.currency,
+            status: data.status,
+            mpPreferenceId: data.mp_preference_id,
+            mpPaymentId: data.mp_payment_id,
+            mpPaymentType: data.mp_payment_type,
+            mpPaymentMethod: data.mp_payment_method,
+            description: data.description,
+            paymentLink: data.payment_link,
+            pixQrCode: data.pix_qr_code,
+            pixQrCodeBase64: data.pix_qr_code_base64,
+            pixExpiration: data.pix_expiration,
+            createdAt: data.created_at,
+            paidAt: data.paid_at,
+            expiresAt: data.expires_at,
         };
     },
 };

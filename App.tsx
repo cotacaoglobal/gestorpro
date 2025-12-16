@@ -26,6 +26,7 @@ import { AdminTenants } from './components/admin/AdminTenants';
 import { AdminPlans } from './components/admin/AdminPlans';
 import { AdminFinancial } from './components/admin/AdminFinancial';
 import { AdminSettings } from './components/admin/AdminSettings';
+import { TenantSubscriptionPanel } from './components/TenantSubscriptionPanel';
 
 const App: React.FC = () => {
   const navigate = useNavigate();
@@ -221,6 +222,7 @@ const App: React.FC = () => {
       'BACKUP_DATA': '/settings/backup',
       'MANAGE_CATEGORIES': '/settings/categories',
       'NOTIFICATIONS': '/settings/notifications',
+      'SUBSCRIPTION': '/subscription',
       'ADMIN_DASHBOARD': '/admin/dashboard',
       'ADMIN_TENANTS': '/admin/tenants',
       'ADMIN_PLANS': '/admin/plans',
@@ -340,6 +342,7 @@ const App: React.FC = () => {
         {view === 'BACKUP_DATA' && <BackupData user={user} />}
         {view === 'MANAGE_CATEGORIES' && <ManageCategories user={user} />}
         {view === 'NOTIFICATIONS' && <Notifications user={user} />}
+        {view === 'SUBSCRIPTION' && <TenantSubscriptionPanel user={user} />}
       </main>
 
       {/* Profile Modal */}

@@ -107,6 +107,49 @@ export interface SaasStats {
   churnRate?: number;
 }
 
+export interface Subscription {
+  id: string;
+  tenantId: string;
+  planId: string;
+  status: 'trial' | 'active' | 'expired' | 'cancelled';
+  startedAt: string;
+  trialEndsAt?: string;
+  expiresAt?: string;
+  cancelledAt?: string;
+  autoRenew: boolean;
+  // Informações do plano (quando buscado via view)
+  planName?: string;
+  planPrice?: number;
+  planLimits?: Record<string, number>;
+  planFeatures?: string[];
+}
+
+export interface PaymentTransaction {
+  id: string;
+  tenantId: string;
+  subscriptionId?: string;
+  planId?: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled' | 'refunded' | 'in_process';
+  mpPreferenceId?: string;
+  mpPaymentId?: string;
+  mpPaymentType?: string;
+  mpPaymentMethod?: string;
+  description?: string;
+  paymentLink?: string;
+  pixQrCode?: string;
+  pixQrCodeBase64?: string;
+  pixExpiration?: string;
+  createdAt: string;
+  paidAt?: string;
+  expiresAt?: string;
+  // View fields
+  tenantName?: string;
+  planName?: string;
+  planPrice?: number;
+}
+
 export type Role = 'admin' | 'operator' | 'super_admin';
 
 export interface User {
@@ -145,5 +188,5 @@ export interface CashSession {
   };
 }
 
-export type ViewState = 'LOGIN' | 'REGISTER' | 'DASHBOARD' | 'INVENTORY' | 'POS' | 'HISTORY' | 'USERS' | 'OPERATOR_HOME' | 'CASH_MANAGEMENT' | 'DUPLICATE_CLEANUP' | 'STORE_SETTINGS' | 'PRINTER_SETTINGS' | 'BACKUP_DATA' | 'MANAGE_CATEGORIES' | 'NOTIFICATIONS'
+export type ViewState = 'LOGIN' | 'REGISTER' | 'DASHBOARD' | 'INVENTORY' | 'POS' | 'HISTORY' | 'USERS' | 'OPERATOR_HOME' | 'CASH_MANAGEMENT' | 'DUPLICATE_CLEANUP' | 'STORE_SETTINGS' | 'PRINTER_SETTINGS' | 'BACKUP_DATA' | 'MANAGE_CATEGORIES' | 'NOTIFICATIONS' | 'SUBSCRIPTION'
   | 'ADMIN_DASHBOARD' | 'ADMIN_TENANTS' | 'ADMIN_PLANS' | 'ADMIN_FINANCIAL' | 'ADMIN_SETTINGS';

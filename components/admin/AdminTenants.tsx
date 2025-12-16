@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Ban, CheckCircle, MoreVertical, Trash2, Power } from 'lucide-react';
+import { Search, Ban, CheckCircle, MoreVertical, Trash2, Power, CreditCard } from 'lucide-react';
 import { SupabaseService } from '../../services/supabaseService';
-import { Tenant } from '../../types';
+import { Tenant, Subscription } from '../../types';
+import { ManageSubscriptionModal } from './ManageSubscriptionModal';
 
 export const AdminTenants: React.FC = () => {
     const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -9,6 +10,8 @@ export const AdminTenants: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'suspended'>('all');
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+    const [subscriptions, setSubscriptions] = useState<Map<string, Subscription>>(new Map());
+    const [selectedTenant, setSelectedTenant] = useState<{ id: string; name: string } | null>(null);
 
     useEffect(() => {
         loadTenants();
@@ -23,6 +26,18 @@ export const AdminTenants: React.FC = () => {
             setLoading(true);
             const data = await SupabaseService.getTenants();
             setTenants(data);
+
+            // Load subscriptions for each tenant
+            const subsMap = new Map<string, Subscription>();
+            await Promise.all(data.map(async (tenant) => {
+                try {
+                    const sub = await SupabaseService.getSubscription(tenant.id);
+                    if (sub) subsMap.set(tenant.id, sub);
+                } catch (err) {
+                    // Ignore errors for individual subscriptions
+                }
+            }));
+            setSubscriptions(subsMap);
         } catch (error) {
             console.error('Error loading tenants:', error);
         } finally {
@@ -111,7 +126,7 @@ export const AdminTenants: React.FC = () => {
                             <tr>
                                 <th className="p-4 font-semibold text-gray-600">Empresa</th>
                                 <th className="p-4 font-semibold text-gray-600">Responsável</th>
-                                <th className="p-4 font-semibold text-gray-600">Plano</th>
+                                <th className="p-4 font-semibold text-gray-600">Assinatura</th>
                                 <th className="p-4 font-semibold text-gray-600">Status</th>
                                 <th className="p-4 font-semibold text-gray-600">Data Cadastro</th>
                                 <th className="p-4 font-semibold text-gray-600 text-right">Ações</th>
@@ -138,9 +153,23 @@ export const AdminTenants: React.FC = () => {
                                             <div className="text-xs text-gray-400">{tenant.ownerEmail}</div>
                                         </td>
                                         <td className="p-4">
-                                            <span className="px-2 py-1 bg-violet-50 text-violet-600 rounded-full text-xs font-semibold uppercase">
-                                                {tenant.plan}
-                                            </span>
+                                            {subscriptions.get(tenant.id) ? (
+                                                <div>
+                                                    <div className="font-medium text-gray-800">
+                                                        {subscriptions.get(tenant.id)!.planName || tenant.plan.toUpperCase()}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500 flex items-center gap-1">
+                                                        <span className={`w-2 h-2 rounded-full ${subscriptions.get(tenant.id)!.status === 'active' ? 'bg-emerald-500' :
+                                                                subscriptions.get(tenant.id)!.status === 'trial' ? 'bg-blue-500' :
+                                                                    subscriptions.get(tenant.id)!.status === 'expired' ? 'bg-red-500' :
+                                                                        'bg-gray-400'
+                                                            }`}></span>
+                                                        {subscriptions.get(tenant.id)!.status}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-400 text-sm">Sem assinatura</span>
+                                            )}
                                         </td>
                                         <td className="p-4">
                                             {tenant.status === 'active' ? (
@@ -172,6 +201,17 @@ export const AdminTenants: React.FC = () => {
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
+                                                            setSelectedTenant({ id: tenant.id, name: tenant.name });
+                                                            setOpenDropdown(null);
+                                                        }}
+                                                        className="w-full flex items-center gap-2 px-4 py-2 text-left hover:bg-violet-50 transition-colors text-sm text-violet-600"
+                                                    >
+                                                        <CreditCard size={16} />
+                                                        <span>Gerenciar Assinatura</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
                                                             handleToggleStatus(tenant.id, tenant.status);
                                                         }}
                                                         className="w-full flex items-center gap-2 px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
@@ -199,6 +239,19 @@ export const AdminTenants: React.FC = () => {
                     </table>
                 </div>
             </div>
+
+            {selectedTenant && (
+                <ManageSubscriptionModal
+                    tenantId={selectedTenant.id}
+                    tenantName={selectedTenant.name}
+                    currentSubscription={subscriptions.get(selectedTenant.id) || null}
+                    onClose={() => setSelectedTenant(null)}
+                    onSuccess={() => {
+                        loadTenants();
+                        setSelectedTenant(null);
+                    }}
+                />
+            )}
         </div>
     );
 };
