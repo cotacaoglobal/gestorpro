@@ -48,8 +48,38 @@ export const AdminFinancial: React.FC = () => {
         return labels[status as keyof typeof labels] || status;
     };
 
+    const handleExport = () => {
+        if (invoices.length === 0) {
+            alert('Não há dados para exportar.');
+            return;
+        }
+
+        const headers = ['ID', 'Tenant ID', 'Valor', 'Status', 'Vencimento', 'Criado em', 'Pago em'];
+        const csvContent = [
+            headers.join(','),
+            ...invoices.map(inv => [
+                inv.id,
+                inv.tenantId,
+                inv.amount.toFixed(2),
+                getStatusLabel(inv.status),
+                new Date(inv.dueDate).toLocaleDateString('pt-BR'),
+                new Date(inv.createdAt).toLocaleDateString('pt-BR'),
+                inv.paidAt ? new Date(inv.paidAt).toLocaleDateString('pt-BR') : '-'
+            ].join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `relatorio_financeiro_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
-        <div className="p-6 space-y-6">
+        <div className="p-[10px] md:p-6 space-y-6">
             <div>
                 <h1 className="text-2xl font-bold text-gray-800">Financeiro</h1>
                 <p className="text-gray-500">Visão geral de receita e faturas</p>
@@ -90,7 +120,10 @@ export const AdminFinancial: React.FC = () => {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-4 border-b border-gray-100 flex justify-between items-center">
                     <h2 className="font-bold text-gray-800">Faturas Recentes</h2>
-                    <button className="flex items-center gap-2 px-3 py-2 text-sm bg-violet-50 text-violet-600 rounded-lg hover:bg-violet-100">
+                    <button
+                        onClick={handleExport}
+                        className="flex items-center gap-2 px-3 py-2 text-sm bg-violet-50 text-violet-600 rounded-lg hover:bg-violet-100 transition-colors"
+                    >
                         <Download size={16} /> Exportar
                     </button>
                 </div>

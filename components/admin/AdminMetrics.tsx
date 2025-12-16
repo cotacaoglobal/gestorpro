@@ -46,7 +46,7 @@ export const AdminMetrics: React.FC = () => {
     }
 
     return (
-        <div className="p-6 space-y-6 animate-in fade-in duration-500">
+        <div className="p-[10px] md:p-6 space-y-6 animate-in fade-in duration-500">
             {/* Header */}
             <div>
                 <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">

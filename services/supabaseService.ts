@@ -939,7 +939,7 @@ export const SupabaseService = {
     getRevenueStats: async (): Promise<{ mrr: number; arr: number }> => {
         // Calculate MRR from active subscriptions
         const { data: subscriptions, error } = await supabase
-            .from('saas_subscriptions')
+            .from('subscriptions')
             .select('plan_id, saas_plans(price)')
             .eq('status', 'active');
 

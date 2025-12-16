@@ -30,7 +30,7 @@ export const AdminSettings: React.FC = () => {
     };
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="p-[10px] md:p-6 space-y-6">
             <div>
                 <h1 className="text-2xl font-bold text-gray-800">Configurações do Sistema</h1>
                 <p className="text-gray-500">Gerencie configurações globais da plataforma</p>
@@ -193,7 +193,7 @@ export const AdminSettings: React.FC = () => {
             </div>
 
             {/* API Keys */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 max-w-full overflow-hidden">
                 <div className="flex items-center gap-3 mb-4">
                     <div className="p-2 bg-green-50 rounded-lg">
                         <Key className="text-green-600" size={20} />
@@ -204,14 +204,14 @@ export const AdminSettings: React.FC = () => {
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Stripe API Key</label>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                             <input
                                 type="password"
                                 value={apiKeys.stripeKey}
                                 readOnly
-                                className="flex-1 p-2 border border-gray-200 rounded-lg bg-gray-50"
+                                className="flex-1 p-2 border border-gray-200 rounded-lg bg-gray-50 min-w-0"
                             />
-                            <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                            <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 w-full sm:w-auto">
                                 Regenerar
                             </button>
                         </div>
@@ -219,14 +219,14 @@ export const AdminSettings: React.FC = () => {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">SendGrid API Key</label>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                             <input
                                 type="password"
                                 value={apiKeys.sendgridKey}
                                 readOnly
-                                className="flex-1 p-2 border border-gray-200 rounded-lg bg-gray-50"
+                                className="flex-1 p-2 border border-gray-200 rounded-lg bg-gray-50 min-w-0"
                             />
-                            <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                            <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 w-full sm:w-auto">
                                 Regenerar
                             </button>
                         </div>

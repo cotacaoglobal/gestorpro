@@ -89,26 +89,26 @@ export const AdminTenants: React.FC = () => {
     });
 
     return (
-        <div className="p-6 space-y-6 animate-in fade-in duration-500">
+        <div className="p-[10px] md:p-6 space-y-6 animate-in fade-in duration-500 w-full overflow-hidden">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Gerenciar Clientes</h1>
-                    <p className="text-gray-500">Listagem completa de inquilinos do SaaS</p>
+                    <h1 className="text-xl md:text-2xl font-bold text-gray-800">Gerenciar Clientes</h1>
+                    <p className="text-sm text-gray-500">Listagem completa de inquilinos do SaaS</p>
                 </div>
 
-                <div className="flex gap-2">
-                    <div className="relative">
+                <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                    <div className="relative flex-1 sm:flex-none">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                         <input
                             type="text"
                             placeholder="Buscar cliente..."
-                            className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
                     <select
-                        className="p-2 border border-gray-200 rounded-lg bg-white"
+                        className="p-2 border border-gray-200 rounded-lg bg-white w-full sm:w-auto"
                         value={filterStatus}
                         onChange={e => setFilterStatus(e.target.value as any)}
                     >
@@ -160,9 +160,9 @@ export const AdminTenants: React.FC = () => {
                                                     </div>
                                                     <div className="text-xs text-gray-500 flex items-center gap-1">
                                                         <span className={`w-2 h-2 rounded-full ${subscriptions.get(tenant.id)!.status === 'active' ? 'bg-emerald-500' :
-                                                                subscriptions.get(tenant.id)!.status === 'trial' ? 'bg-blue-500' :
-                                                                    subscriptions.get(tenant.id)!.status === 'expired' ? 'bg-red-500' :
-                                                                        'bg-gray-400'
+                                                            subscriptions.get(tenant.id)!.status === 'trial' ? 'bg-blue-500' :
+                                                                subscriptions.get(tenant.id)!.status === 'expired' ? 'bg-red-500' :
+                                                                    'bg-gray-400'
                                                             }`}></span>
                                                         {subscriptions.get(tenant.id)!.status}
                                                     </div>
