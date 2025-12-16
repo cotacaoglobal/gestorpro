@@ -135,7 +135,7 @@ export const StockReports: React.FC<StockReportsProps> = ({ user }) => {
             </div>
 
             {/* Filters */}
-            <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 shadow-sm border border-slate-200">
+            <div className="bg-white rounded-xl md:rounded-2xl p-2.5 md:p-6 shadow-sm border border-slate-200">
                 <div className="flex items-center gap-2 mb-3 md:mb-4">
                     <Filter className="w-4 h-4 md:w-5 md:h-5 text-violet-500" />
                     <h3 className="text-base md:text-lg font-bold text-slate-800">Filtros</h3>
@@ -231,7 +231,7 @@ export const StockReports: React.FC<StockReportsProps> = ({ user }) => {
             </div>
 
             {/* Category Reports */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+            <div className="bg-white rounded-2xl p-2.5 md:p-6 shadow-sm border border-slate-200">
                 <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
                     <BarChart3 className="w-5 h-5 text-violet-500" />
                     Relatório por Categoria
@@ -269,7 +269,7 @@ export const StockReports: React.FC<StockReportsProps> = ({ user }) => {
             </div>
 
             {/* Top Selling Products */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+            <div className="bg-white rounded-2xl p-2.5 md:p-6 shadow-sm border border-slate-200">
                 <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-violet-500" />
                     Top 10 Produtos Mais Vendidos
@@ -313,7 +313,7 @@ export const StockReports: React.FC<StockReportsProps> = ({ user }) => {
             </div>
 
             {/* Product Reports */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+            <div className="bg-white rounded-2xl p-2.5 md:p-6 shadow-sm border border-slate-200">
                 <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
                     <Package className="w-5 h-5 text-violet-500" />
                     Relatório Detalhado por Produto

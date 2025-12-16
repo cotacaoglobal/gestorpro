@@ -1558,7 +1558,7 @@ export const SupabaseService = {
 
                 const report = categoryMap.get(category)!;
                 report.stockQuantity += product.stock;
-                report.stockValue += product.stock * parseFloat(product.price_cost);
+                report.stockValue += product.stock * parseFloat(product.price_sell);
             });
 
             // Process sales data
@@ -1645,7 +1645,7 @@ export const SupabaseService = {
                     });
                 });
 
-                const stockValue = product.stock * parseFloat(product.price_cost);
+                const stockValue = product.stock * parseFloat(product.price_sell);
                 const profit = salesRevenue - (salesQuantity * parseFloat(product.price_cost));
                 const profitMargin = salesRevenue > 0 ? (profit / salesRevenue) * 100 : 0;
 
