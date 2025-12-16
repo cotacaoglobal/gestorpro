@@ -1,5 +1,7 @@
 import { supabase } from './supabaseClient';
-import { Product, Sale, User, CashSession, CashMovement, Tenant, SaasStats, SaasPlan, SaasInvoice, Subscription, PaymentTransaction } from '../types';
+import { Product, Sale, User, CashSession, CashMovement, Tenant, SaasStats, SaasPlan, SaasInvoice, Subscription, PaymentTransaction, AuditLog, TenantGrowth, RevenueByPlan, RetentionMetrics, MrrBreakdown } from '../types';
+
+
 
 export const SupabaseService = {
     // --- Products ---
@@ -756,34 +758,50 @@ export const SupabaseService = {
             .delete()
             .eq('id', tenantId);
 
+
         if (error) throw error;
     },
 
     getSaaSStats: async (): Promise<SaasStats> => {
-        // Get total tenants
-        const { count: totalTenants, error: tenantError } = await supabase
-            .from('tenants')
-            .select('*', { count: 'exact', head: true });
+        // Usar view com métricas pré-calculadas
+        const { data, error } = await supabase
+            .from('saas_metrics_dashboard')
+            .select('*')
+            .single();
 
-        if (tenantError) throw tenantError;
+        if (error) {
+            console.error('Error fetching SaaS stats from view, falling back:', error);
+            // Fallback para o método antigo se a view não existir
+            const { count: totalTenants } = await supabase
+                .from('tenants')
+                .select('*', { count: 'exact', head: true });
 
-        // Get new tenants this month
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0, 0, 0, 0);
+            const startOfMonth = new Date();
+            startOfMonth.setDate(1);
+            startOfMonth.setHours(0, 0, 0, 0);
 
-        const { count: newTenants, error: newTenantError } = await supabase
-            .from('tenants')
-            .select('*', { count: 'exact', head: true })
-            .gte('created_at', startOfMonth.toISOString());
+            const { count: newTenants } = await supabase
+                .from('tenants')
+                .select('*', { count: 'exact', head: true })
+                .gte('created_at', startOfMonth.toISOString());
 
-        if (newTenantError) throw newTenantError;
+            return {
+                totalRevenue: 0,
+                totalTenants: totalTenants || 0,
+                newTenantsMonth: newTenants || 0,
+                activeSubscriptions: 0,
+            };
+        }
 
         return {
-            totalRevenue: 0, // Not implemented yet
-            totalTenants: totalTenants || 0,
-            newTenantsMonth: newTenants || 0,
-            activeSubscriptions: 0, // Not implemented yet
+            totalRevenue: parseFloat(data.mrr) || 0,
+            totalTenants: data.total_tenants || 0,
+            newTenantsMonth: data.new_tenants_month || 0,
+            activeSubscriptions: data.active_subscriptions || 0,
+            churnRate: parseFloat(data.churn_rate) || 0,
+            ltv: parseFloat(data.ltv) || 0,
+            mrr: parseFloat(data.mrr) || 0,
+            arr: parseFloat(data.arr) || 0,
         };
     },
 
@@ -1002,16 +1020,68 @@ export const SupabaseService = {
 
     updateSubscriptionPlan: async (
         tenantId: string,
-        newPlanId: string
+        newPlanId: string,
+        userId?: string
     ): Promise<void> => {
-        const { error } = await supabase
+        // 1. Verificar se o plano existe
+        const { data: newPlan, error: planError } = await supabase
+            .from('saas_plans')
+            .select('*')
+            .eq('id', newPlanId)
+            .eq('active', true)
+            .single();
+
+        if (planError || !newPlan) {
+            throw new Error('Plano não encontrado ou inativo');
+        }
+
+        // 2. Buscar assinatura atual
+        const { data: currentSub, error: subError } = await supabase
+            .from('subscriptions')
+            .select('id, plan_id, status')
+            .eq('tenant_id', tenantId)
+            .single();
+
+        if (subError || !currentSub) {
+            throw new Error('Assinatura não encontrada');
+        }
+
+        // 3. Verificar se não está tentando mudar para o mesmo plano
+        if (currentSub.plan_id === newPlanId) {
+            throw new Error('Este já é o plano atual');
+        }
+
+        // 4. Atualizar o plano
+        const { error: updateError } = await supabase
             .from('subscriptions')
             .update({
                 plan_id: newPlanId,
+                updated_at: new Date().toISOString(),
             })
             .eq('tenant_id', tenantId);
 
-        if (error) throw error;
+        if (updateError) throw updateError;
+
+        // 5. Criar log de auditoria (via função do banco)
+        try {
+            await supabase.rpc('create_audit_log', {
+                p_tenant_id: tenantId,
+                p_user_id: userId || null,
+                p_action: 'plan_changed_manual',
+                p_entity_type: 'subscription',
+                p_entity_id: currentSub.id,
+                p_details: {
+                    old_plan_id: currentSub.plan_id,
+                    new_plan_id: newPlanId,
+                    new_plan_name: newPlan.name,
+                    new_plan_price: newPlan.price,
+                },
+                p_status: 'success'
+            });
+        } catch (logError) {
+            // Log error não deve bloquear a operação
+            console.error('Erro ao criar log de auditoria:', logError);
+        }
     },
 
     cancelSubscription: async (tenantId: string): Promise<void> => {
@@ -1153,5 +1223,180 @@ export const SupabaseService = {
             paidAt: data.paid_at,
             expiresAt: data.expires_at,
         };
+    },
+
+    // --- Audit Logs ---
+    getAuditLogs: async (filters?: {
+        tenantId?: string;
+        userId?: string;
+        action?: string;
+        entityType?: string;
+        startDate?: string;
+        endDate?: string;
+        limit?: number;
+    }): Promise<any[]> => {
+        let query = supabase
+            .from('audit_logs')
+            .select(`
+                *,
+                users (name),
+                tenants (name)
+            `)
+            .order('created_at', { ascending: false });
+
+        if (filters?.tenantId) {
+            query = query.eq('tenant_id', filters.tenantId);
+        }
+
+        if (filters?.userId) {
+            query = query.eq('user_id', filters.userId);
+        }
+
+        if (filters?.action) {
+            query = query.eq('action', filters.action);
+        }
+
+        if (filters?.entityType) {
+            query = query.eq('entity_type', filters.entityType);
+        }
+
+        if (filters?.startDate) {
+            query = query.gte('created_at', filters.startDate);
+        }
+
+        if (filters?.endDate) {
+            query = query.lte('created_at', filters.endDate);
+        }
+
+        if (filters?.limit) {
+            query = query.limit(filters.limit);
+        } else {
+            query = query.limit(100); // Default limit
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+
+        return (data || []).map((log: any) => ({
+            id: log.id,
+            tenantId: log.tenant_id,
+            userId: log.user_id,
+            action: log.action,
+            entityType: log.entity_type,
+            entityId: log.entity_id,
+            details: log.details,
+            ipAddress: log.ip_address,
+            userAgent: log.user_agent,
+            status: log.status,
+            errorMessage: log.error_message,
+            createdAt: log.created_at,
+            userName: log.users?.name,
+            tenantName: log.tenants?.name,
+        }));
+    },
+
+    createAuditLog: async (log: {
+        tenantId?: string;
+        userId?: string;
+        action: string;
+        entityType?: string;
+        entityId?: string;
+        details?: Record<string, any>;
+        status?: 'success' | 'failed' | 'pending';
+    }): Promise<void> => {
+        const { error } = await supabase.rpc('create_audit_log', {
+            p_tenant_id: log.tenantId || null,
+            p_user_id: log.userId || null,
+            p_action: log.action,
+            p_entity_type: log.entityType || null,
+            p_entity_id: log.entityId || null,
+            p_details: log.details || {},
+            p_status: log.status || 'success'
+        });
+
+        if (error) {
+            console.error('Erro ao criar audit log:', error);
+            throw error;
+        }
+    },
+
+    // --- Advanced Metrics ---
+    getTenantGrowth: async (months: number = 6): Promise<TenantGrowth[]> => {
+        const { data, error } = await supabase.rpc('get_tenant_growth', {
+            p_months: months
+        });
+
+        if (error) throw error;
+
+        return data || [];
+    },
+
+    getRevenueByPlan: async (): Promise<RevenueByPlan[]> => {
+        const { data, error } = await supabase.rpc('get_revenue_by_plan');
+
+        if (error) throw error;
+
+        return (data || []).map((row: any) => ({
+            plan_id: row.plan_id,
+            plan_name: row.plan_name,
+            plan_price: parseFloat(row.plan_price),
+            active_subscriptions: parseInt(row.active_subscriptions),
+            mrr: parseFloat(row.mrr) || 0,
+            percentage: parseFloat(row.percentage) || 0,
+        }));
+    },
+
+    getRetentionMetrics: async (): Promise<RetentionMetrics | null> => {
+        const { data, error } = await supabase.rpc('get_retention_metrics');
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) return null;
+
+        const row = data[0];
+        return {
+            total_tenants: parseInt(row.total_tenants),
+            active_tenants: parseInt(row.active_tenants),
+            retention_rate: parseFloat(row.retention_rate) || 0,
+            avg_subscription_days: parseFloat(row.avg_subscription_days) || 0,
+        };
+    },
+
+    getMrrBreakdown: async (): Promise<MrrBreakdown | null> => {
+        const { data, error } = await supabase.rpc('get_mrr_breakdown');
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) return null;
+
+        const row = data[0];
+        return {
+            mrr_total: parseFloat(row.mrr_total) || 0,
+            mrr_new: parseFloat(row.mrr_new) || 0,
+            mrr_expansion: parseFloat(row.mrr_expansion) || 0,
+            mrr_contraction: parseFloat(row.mrr_contraction) || 0,
+            mrr_churn: parseFloat(row.mrr_churn) || 0,
+            net_mrr_growth: parseFloat(row.net_mrr_growth) || 0,
+        };
+    },
+
+    calculateChurnRate: async (startDate?: string, endDate?: string): Promise<number> => {
+        const { data, error } = await supabase.rpc('calculate_churn_rate', {
+            p_start_date: startDate || null,
+            p_end_date: endDate || null,
+        });
+
+        if (error) throw error;
+
+        return parseFloat(data) || 0;
+    },
+
+    calculateLtv: async (): Promise<number> => {
+        const { data, error } = await supabase.rpc('calculate_ltv');
+
+        if (error) throw error;
+
+        return parseFloat(data) || 0;
     },
 };

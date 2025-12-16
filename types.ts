@@ -105,6 +105,40 @@ export interface SaasStats {
   newTenantsMonth: number;
   activeSubscriptions: number;
   churnRate?: number;
+  ltv?: number;
+  mrr?: number;
+  arr?: number;
+}
+
+export interface TenantGrowth {
+  month: string;
+  new_tenants: number;
+  total_tenants: number;
+}
+
+export interface RevenueByPlan {
+  plan_id: string;
+  plan_name: string;
+  plan_price: number;
+  active_subscriptions: number;
+  mrr: number;
+  percentage: number;
+}
+
+export interface RetentionMetrics {
+  total_tenants: number;
+  active_tenants: number;
+  retention_rate: number;
+  avg_subscription_days: number;
+}
+
+export interface MrrBreakdown {
+  mrr_total: number;
+  mrr_new: number;
+  mrr_expansion: number;
+  mrr_contraction: number;
+  mrr_churn: number;
+  net_mrr_growth: number;
 }
 
 export interface Subscription {
@@ -188,5 +222,23 @@ export interface CashSession {
   };
 }
 
+export interface AuditLog {
+  id: string;
+  tenantId?: string;
+  userId?: string;
+  action: string;
+  entityType?: string;
+  entityId?: string;
+  details?: Record<string, any>;
+  ipAddress?: string;
+  userAgent?: string;
+  status?: 'success' | 'failed' | 'pending';
+  errorMessage?: string;
+  createdAt: string;
+  // View fields (when joined)
+  userName?: string;
+  tenantName?: string;
+}
+
 export type ViewState = 'LOGIN' | 'REGISTER' | 'DASHBOARD' | 'INVENTORY' | 'POS' | 'HISTORY' | 'USERS' | 'OPERATOR_HOME' | 'CASH_MANAGEMENT' | 'DUPLICATE_CLEANUP' | 'STORE_SETTINGS' | 'PRINTER_SETTINGS' | 'BACKUP_DATA' | 'MANAGE_CATEGORIES' | 'NOTIFICATIONS' | 'SUBSCRIPTION'
-  | 'ADMIN_DASHBOARD' | 'ADMIN_TENANTS' | 'ADMIN_PLANS' | 'ADMIN_FINANCIAL' | 'ADMIN_SETTINGS';
+  | 'ADMIN_DASHBOARD' | 'ADMIN_TENANTS' | 'ADMIN_PLANS' | 'ADMIN_FINANCIAL' | 'ADMIN_METRICS' | 'ADMIN_LOGS' | 'ADMIN_SETTINGS';

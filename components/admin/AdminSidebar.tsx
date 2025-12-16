@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Users, CreditCard, Layers, LogOut, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Layers, LogOut, Settings, FileText, TrendingUp } from 'lucide-react';
 import { ViewState } from '../../types';
 
 interface AdminSidebarProps {
@@ -14,6 +14,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, setView
         { id: 'ADMIN_TENANTS', label: 'Clientes (Tenants)', icon: Users },
         { id: 'ADMIN_PLANS', label: 'Planos e Limites', icon: Layers },
         { id: 'ADMIN_FINANCIAL', label: 'Financeiro', icon: CreditCard },
+        { id: 'ADMIN_METRICS', label: 'Métricas Avançadas', icon: TrendingUp },
+        { id: 'ADMIN_LOGS', label: 'Logs de Auditoria', icon: FileText },
         { id: 'ADMIN_SETTINGS', label: 'Configurações', icon: Settings },
     ];
 

@@ -26,6 +26,8 @@ import { AdminTenants } from './components/admin/AdminTenants';
 import { AdminPlans } from './components/admin/AdminPlans';
 import { AdminFinancial } from './components/admin/AdminFinancial';
 import { AdminSettings } from './components/admin/AdminSettings';
+import { AdminLogs } from './components/admin/AdminLogs';
+import { AdminMetrics } from './components/admin/AdminMetrics';
 import { TenantSubscriptionPanel } from './components/TenantSubscriptionPanel';
 
 const App: React.FC = () => {
@@ -137,6 +139,8 @@ const App: React.FC = () => {
       if (path.includes('/tenants')) setView('ADMIN_TENANTS');
       else if (path.includes('/plans')) setView('ADMIN_PLANS');
       else if (path.includes('/financial')) setView('ADMIN_FINANCIAL');
+      else if (path.includes('/metrics')) setView('ADMIN_METRICS');
+      else if (path.includes('/logs')) setView('ADMIN_LOGS');
       else if (path.includes('/settings')) setView('ADMIN_SETTINGS');
       else setView('ADMIN_DASHBOARD');
     }
@@ -227,6 +231,8 @@ const App: React.FC = () => {
       'ADMIN_TENANTS': '/admin/tenants',
       'ADMIN_PLANS': '/admin/plans',
       'ADMIN_FINANCIAL': '/admin/financial',
+      'ADMIN_METRICS': '/admin/metrics',
+      'ADMIN_LOGS': '/admin/logs',
       'ADMIN_SETTINGS': '/admin/settings'
     };
     navigate(pathMap[newView] || '/dashboard');
@@ -294,6 +300,8 @@ const App: React.FC = () => {
         {view === 'ADMIN_TENANTS' && <AdminTenants />}
         {view === 'ADMIN_PLANS' && <AdminPlans />}
         {view === 'ADMIN_FINANCIAL' && <AdminFinancial />}
+        {view === 'ADMIN_METRICS' && <AdminMetrics />}
+        {view === 'ADMIN_LOGS' && <AdminLogs />}
         {view === 'ADMIN_SETTINGS' && <AdminSettings />}
         {/* Fallback */}
         {(!view.startsWith('ADMIN_')) && <AdminDashboard />}
