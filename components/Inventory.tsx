@@ -270,15 +270,15 @@ export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDele
   // If showing reports, render StockReports component
   if (showReports) {
     return (
-      <div className="p-6 md:p-8 max-w-[1600px] mx-auto h-full flex flex-col">
-        <div className="flex items-center justify-between mb-6">
+      <div className="p-2.5 md:p-8 max-w-[1600px] mx-auto h-full flex flex-col">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
           <div>
-            <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">Estoque</h2>
-            <p className="text-slate-500 font-medium">Relatórios e análises detalhadas</p>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Estoque</h2>
+            <p className="text-sm md:text-base text-slate-500 font-medium">Relatórios e análises detalhadas</p>
           </div>
           <button
             onClick={() => setShowReports(false)}
-            className="bg-white hover:bg-slate-50 text-slate-700 px-6 py-3 rounded-2xl flex items-center gap-2 font-bold shadow-sm border border-slate-200 transition-all"
+            className="w-full md:w-auto bg-white hover:bg-slate-50 text-slate-700 px-6 py-3 rounded-2xl flex items-center justify-center gap-2 font-bold shadow-sm border border-slate-200 transition-all text-sm md:text-base"
           >
             ← Voltar para Produtos
           </button>
