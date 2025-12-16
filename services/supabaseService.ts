@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import { Product, Sale, User, CashSession, CashMovement, Tenant, SaasStats, SaasPlan, SaasInvoice, Subscription, PaymentTransaction, AuditLog, TenantGrowth, RevenueByPlan, RetentionMetrics, MrrBreakdown } from '../types';
+import { Product, Sale, User, CashSession, CashMovement, Tenant, SaasStats, SaasPlan, SaasInvoice, Subscription, PaymentTransaction, AuditLog, TenantGrowth, RevenueByPlan, RetentionMetrics, MrrBreakdown, StockFilters, StockMetrics, SalesMetrics, CategoryReport, ProductReport, ProductSalesReport } from '../types';
 
 
 
@@ -504,28 +504,49 @@ export const SupabaseService = {
     },
 
     getActiveSession: async (userId: string): Promise<CashSession | undefined> => {
-        const { data, error } = await supabase
-            .from('cash_sessions')
-            .select('*')
-            .eq('opened_by_user_id', userId)
-            .eq('status', 'OPEN')
-            .single();
+        // Debug
+        // console.log('[Supabase] getActiveSession for user:', userId);
 
-        if (error || !data) return undefined;
+        if (!userId) {
+            console.warn('[Supabase] getActiveSession called with empty userId');
+            return undefined;
+        }
 
-        return {
-            id: data.id,
-            tenantId: data.tenant_id,
-            openedByUserId: data.opened_by_user_id,
-            customerName: data.customer_name,
-            customerCpf: data.customer_cpf,
-            status: data.status,
-            openedAt: data.opened_at,
-            closedAt: data.closed_at,
-            initialFund: parseFloat(data.initial_fund),
-            reportedTotals: data.reported_totals,
-        };
+        try {
+            const { data, error } = await supabase
+                .from('cash_sessions')
+                .select('*')
+                .eq('opened_by_user_id', userId)
+                .eq('status', 'OPEN')
+                .order('opened_at', { ascending: false })
+                .limit(1)
+                .maybeSingle(); // Use maybeSingle combined with limit(1) to always get distinct result
+
+            if (error) {
+                console.error('[Supabase] Error getting active session:', error);
+                return undefined;
+            }
+
+            if (!data) return undefined;
+
+            return {
+                id: data.id,
+                tenantId: data.tenant_id,
+                openedByUserId: data.opened_by_user_id,
+                customerName: data.customer_name,
+                customerCpf: data.customer_cpf,
+                status: data.status,
+                openedAt: data.opened_at,
+                closedAt: data.closed_at,
+                initialFund: parseFloat(data.initial_fund),
+                reportedTotals: data.reported_totals,
+            };
+        } catch (err) {
+            console.error('[Supabase] Unexpected error in getActiveSession:', err);
+            return undefined;
+        }
     },
+
 
     openSession: async (userId: string, tenantId: string, initialFund: number): Promise<CashSession> => {
         const { data: sessionData, error: sessionError } = await supabase
@@ -1398,5 +1419,321 @@ export const SupabaseService = {
         if (error) throw error;
 
         return parseFloat(data) || 0;
+    },
+
+    // --- Stock Reports ---
+    getStockMetrics: async (tenantId: string, filters?: StockFilters): Promise<StockMetrics> => {
+        try {
+            // Get all products for the tenant
+            let query = supabase
+                .from('products')
+                .select('*')
+                .eq('tenant_id', tenantId);
+
+            // Apply category filter if provided
+            if (filters?.category) {
+                query = query.eq('category', filters.category);
+            }
+
+            const { data: products, error } = await query;
+            if (error) throw error;
+
+            const totalQuantity = products?.reduce((sum, p) => sum + p.stock, 0) || 0;
+            // FIX: Calculate total value using sell price (priceSell) instead of cost price
+            const totalValue = products?.reduce((sum, p) => sum + (p.stock * parseFloat(p.price_sell)), 0) || 0;
+            const totalProducts = products?.length || 0;
+            const lowStockCount = products?.filter(p => p.stock <= p.min_stock).length || 0;
+            const averageValue = totalProducts > 0 ? totalValue / totalProducts : 0;
+
+            return {
+                totalQuantity,
+                totalValue,
+                totalProducts,
+                lowStockCount,
+                averageValue,
+            };
+        } catch (error) {
+            console.error('Error getting stock metrics:', error);
+            throw error;
+        }
+    },
+
+    getSalesMetrics: async (tenantId: string, filters?: StockFilters): Promise<SalesMetrics> => {
+        try {
+            // Get sales for the tenant
+            let query = supabase
+                .from('sales')
+                .select('*')
+                .eq('tenant_id', tenantId);
+
+            // Apply date filters if provided
+            if (filters?.startDate) {
+                query = query.gte('date', filters.startDate);
+            }
+            if (filters?.endDate) {
+                query = query.lte('date', filters.endDate);
+            }
+
+            const { data: sales, error } = await query;
+            if (error) throw error;
+
+            let totalQuantitySold = 0;
+            let totalRevenue = 0;
+            let totalCost = 0;
+
+            sales?.forEach(sale => {
+                const items = sale.items || [];
+                items.forEach((item: any) => {
+                    // Apply category filter if provided
+                    if (!filters?.category || item.category === filters.category) {
+                        totalQuantitySold += item.quantity;
+                        totalRevenue += item.quantity * parseFloat(item.priceSell);
+                        totalCost += item.quantity * parseFloat(item.priceCost || 0);
+                    }
+                });
+            });
+
+            const totalProfit = totalRevenue - totalCost;
+            const totalSales = sales?.length || 0;
+            const averageTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
+            const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+
+            return {
+                totalQuantitySold,
+                totalRevenue,
+                totalProfit,
+                totalSales,
+                averageTicket,
+                profitMargin,
+            };
+        } catch (error) {
+            console.error('Error getting sales metrics:', error);
+            throw error;
+        }
+    },
+
+    getStockByCategory: async (tenantId: string, filters?: StockFilters): Promise<CategoryReport[]> => {
+        try {
+            // Get all products
+            const { data: products, error: productsError } = await supabase
+                .from('products')
+                .select('*')
+                .eq('tenant_id', tenantId);
+
+            if (productsError) throw productsError;
+
+            // Get sales data
+            let salesQuery = supabase
+                .from('sales')
+                .select('*')
+                .eq('tenant_id', tenantId);
+
+            if (filters?.startDate) {
+                salesQuery = salesQuery.gte('date', filters.startDate);
+            }
+            if (filters?.endDate) {
+                salesQuery = salesQuery.lte('date', filters.endDate);
+            }
+
+            const { data: sales, error: salesError } = await salesQuery;
+            if (salesError) throw salesError;
+
+            // Group by category
+            const categoryMap = new Map<string, CategoryReport>();
+
+            // Process stock data
+            products?.forEach(product => {
+                const category = product.category || 'Sem Categoria';
+                if (!categoryMap.has(category)) {
+                    categoryMap.set(category, {
+                        categoryName: category,
+                        stockQuantity: 0,
+                        stockValue: 0,
+                        salesQuantity: 0,
+                        salesRevenue: 0,
+                        salesProfit: 0,
+                        percentage: 0,
+                    });
+                }
+
+                const report = categoryMap.get(category)!;
+                report.stockQuantity += product.stock;
+                report.stockValue += product.stock * parseFloat(product.price_cost);
+            });
+
+            // Process sales data
+            sales?.forEach(sale => {
+                const items = sale.items || [];
+                items.forEach((item: any) => {
+                    const category = item.category || 'Sem Categoria';
+                    if (!categoryMap.has(category)) {
+                        categoryMap.set(category, {
+                            categoryName: category,
+                            stockQuantity: 0,
+                            stockValue: 0,
+                            salesQuantity: 0,
+                            salesRevenue: 0,
+                            salesProfit: 0,
+                            percentage: 0,
+                        });
+                    }
+
+                    const report = categoryMap.get(category)!;
+                    report.salesQuantity += item.quantity;
+                    report.salesRevenue += item.quantity * parseFloat(item.priceSell);
+                    report.salesProfit += item.quantity * (parseFloat(item.priceSell) - parseFloat(item.priceCost || 0));
+                });
+            });
+
+            // Calculate percentages
+            const totalStockValue = Array.from(categoryMap.values()).reduce((sum, r) => sum + r.stockValue, 0);
+            categoryMap.forEach(report => {
+                report.percentage = totalStockValue > 0 ? (report.stockValue / totalStockValue) * 100 : 0;
+            });
+
+            return Array.from(categoryMap.values()).sort((a, b) => b.stockValue - a.stockValue);
+        } catch (error) {
+            console.error('Error getting stock by category:', error);
+            throw error;
+        }
+    },
+
+    getStockByProduct: async (tenantId: string, filters?: StockFilters): Promise<ProductReport[]> => {
+        try {
+            // Get all products
+            let productsQuery = supabase
+                .from('products')
+                .select('*')
+                .eq('tenant_id', tenantId);
+
+            if (filters?.category) {
+                productsQuery = productsQuery.eq('category', filters.category);
+            }
+
+            const { data: products, error: productsError } = await productsQuery;
+            if (productsError) throw productsError;
+
+            // Get sales data
+            let salesQuery = supabase
+                .from('sales')
+                .select('*')
+                .eq('tenant_id', tenantId);
+
+            if (filters?.startDate) {
+                salesQuery = salesQuery.gte('date', filters.startDate);
+            }
+            if (filters?.endDate) {
+                salesQuery = salesQuery.lte('date', filters.endDate);
+            }
+
+            const { data: sales, error: salesError } = await salesQuery;
+            if (salesError) throw salesError;
+
+            // Create product reports
+            const productReports: ProductReport[] = products?.map(product => {
+                let salesQuantity = 0;
+                let salesRevenue = 0;
+
+                // Calculate sales for this product
+                sales?.forEach(sale => {
+                    const items = sale.items || [];
+                    items.forEach((item: any) => {
+                        if (item.id === product.id) {
+                            salesQuantity += item.quantity;
+                            salesRevenue += item.quantity * parseFloat(item.priceSell);
+                        }
+                    });
+                });
+
+                const stockValue = product.stock * parseFloat(product.price_cost);
+                const profit = salesRevenue - (salesQuantity * parseFloat(product.price_cost));
+                const profitMargin = salesRevenue > 0 ? (profit / salesRevenue) * 100 : 0;
+
+                return {
+                    productId: product.id,
+                    productName: product.name,
+                    category: product.category || 'Sem Categoria',
+                    stockQuantity: product.stock,
+                    costPrice: parseFloat(product.price_cost),
+                    sellPrice: parseFloat(product.price_sell),
+                    stockValue,
+                    salesQuantity,
+                    salesRevenue,
+                    profit,
+                    profitMargin,
+                };
+            }) || [];
+
+            return productReports.sort((a, b) => b.stockValue - a.stockValue);
+        } catch (error) {
+            console.error('Error getting stock by product:', error);
+            throw error;
+        }
+    },
+
+    getTopSellingProducts: async (tenantId: string, filters?: StockFilters, limit: number = 10): Promise<ProductSalesReport[]> => {
+        try {
+            // Get sales data
+            let salesQuery = supabase
+                .from('sales')
+                .select('*')
+                .eq('tenant_id', tenantId);
+
+            if (filters?.startDate) {
+                salesQuery = salesQuery.gte('date', filters.startDate);
+            }
+            if (filters?.endDate) {
+                salesQuery = salesQuery.lte('date', filters.endDate);
+            }
+
+            const { data: sales, error: salesError } = await salesQuery;
+            if (salesError) throw salesError;
+
+            // Aggregate sales by product
+            const productSalesMap = new Map<string, ProductSalesReport>();
+
+            sales?.forEach(sale => {
+                const items = sale.items || [];
+                items.forEach((item: any) => {
+                    // Apply category filter if provided
+                    if (filters?.category && item.category !== filters.category) {
+                        return;
+                    }
+
+                    if (!productSalesMap.has(item.id)) {
+                        productSalesMap.set(item.id, {
+                            productId: item.id,
+                            productName: item.name,
+                            category: item.category || 'Sem Categoria',
+                            quantitySold: 0,
+                            revenue: 0,
+                            profit: 0,
+                            profitMargin: 0,
+                        });
+                    }
+
+                    const report = productSalesMap.get(item.id)!;
+                    const itemRevenue = item.quantity * parseFloat(item.priceSell);
+                    const itemCost = item.quantity * parseFloat(item.priceCost || 0);
+
+                    report.quantitySold += item.quantity;
+                    report.revenue += itemRevenue;
+                    report.profit += (itemRevenue - itemCost);
+                });
+            });
+
+            // Calculate profit margins
+            productSalesMap.forEach(report => {
+                report.profitMargin = report.revenue > 0 ? (report.profit / report.revenue) * 100 : 0;
+            });
+
+            // Sort by quantity sold and limit
+            return Array.from(productSalesMap.values())
+                .sort((a, b) => b.quantitySold - a.quantitySold)
+                .slice(0, limit);
+        } catch (error) {
+            console.error('Error getting top selling products:', error);
+            throw error;
+        }
     },
 };

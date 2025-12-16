@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Product, CartItem, PaymentMethod, Sale, SalePayment, User } from '../types';
-import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, Banknote, QrCode, Check, LogOut, Store, X, User as UserIcon, AlertCircle, AlertTriangle, ScanBarcode, Printer, ArrowRight, Calculator, Tag, Percent, DollarSign, Volume2, VolumeX, TrendingUp, Clock, Star, Wifi, WifiOff, CloudOff } from 'lucide-react';
+import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, Banknote, QrCode, Check, LogOut, Store, X, User as UserIcon, AlertCircle, AlertTriangle, ScanBarcode, Printer, ArrowRight, Calculator, Tag, Percent, DollarSign, Volume2, VolumeX, TrendingUp, Clock, Star, Wifi, WifiOff, CloudOff, Package, ChevronUp, ChevronDown } from 'lucide-react';
 import { SupabaseService } from '../services/supabaseService';
 import { CalculatorModal, DiscountModal } from './POSModals';
 import { SaleSuccessModal } from './SaleSuccessModal';
@@ -28,6 +28,7 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [clientData, setClientData] = useState<ClientData | null>(null);
   const [splitPayments, setSplitPayments] = useState<SalePayment[]>([]);
+  const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
   // New States for Receipt Flow
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
@@ -114,8 +115,12 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
   // Update pending sales count
   useEffect(() => {
     const updatePendingCount = async () => {
-      const count = await OfflineService.countPending();
-      setPendingCount(count);
+      try {
+        const count = await OfflineService.countPending();
+        setPendingCount(count);
+      } catch (error) {
+        console.warn('Error checking pending sales:', error);
+      }
     };
 
     updatePendingCount();
@@ -128,13 +133,17 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
     if (isOnline) {
       // Pequeno delay para garantir conexão estável
       const timer = setTimeout(async () => {
-        const pending = await OfflineService.countPending();
-        if (pending > 0) {
-          console.log(`🔄 Voltou online! Iniciando sincronização de ${pending} vendas...`);
-          await syncService.autoSync();
-          // Atualiza contador após sync
-          const newCount = await OfflineService.countPending();
-          setPendingCount(newCount);
+        try {
+          const pending = await OfflineService.countPending();
+          if (pending > 0) {
+            console.log(`🔄 Voltou online! Iniciando sincronização de ${pending} vendas...`);
+            await syncService.autoSync();
+            // Atualiza contador após sync
+            const newCount = await OfflineService.countPending();
+            setPendingCount(newCount);
+          }
+        } catch (error) {
+          console.warn('Error during auto-sync check:', error);
         }
       }, 2000);
       return () => clearTimeout(timer);
@@ -707,14 +716,14 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
       )}
 
       {/* POS Header */}
-      <div className="px-6 py-4 flex justify-between items-center shadow-sm z-20 sticky top-0 transition-colors bg-white">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-violet-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-violet-200">
-            <Store size={24} />
+      <div className="px-4 md:px-6 py-3 md:py-4 flex justify-between items-center shadow-sm z-20 sticky top-0 transition-colors bg-white">
+        <div className="flex items-center gap-3 md:gap-4">
+          <div className="w-10 h-10 md:w-12 md:h-12 bg-violet-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-violet-200">
+            <Store size={20} className="md:w-6 md:h-6" />
           </div>
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="font-extrabold text-lg leading-tight text-slate-800">Terminal de Vendas</h1>
+            <div className="flex items-center gap-2 md:gap-3">
+              <h1 className="font-extrabold text-base md:text-lg leading-tight text-slate-800">Terminal de Vendas</h1>
               <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-50 border border-slate-100">
                 <Clock size={14} className="text-violet-600" />
                 <span className="text-xs font-bold text-slate-700">
@@ -726,55 +735,55 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-4 text-xs font-medium mt-1">
-              <span className="px-2 py-1 rounded-lg bg-slate-100 text-slate-600">
+            <div className="flex items-center gap-2 md:gap-4 text-xs font-medium mt-0.5 md:mt-1">
+              <span className="px-1.5 md:px-2 py-0.5 md:py-1 rounded-lg bg-slate-100 text-slate-600 text-[10px] md:text-xs">
                 Op: {user.name}
               </span>
-              {clientData && <span className="text-violet-600 flex items-center gap-1"><UserIcon size={12} /> {clientData.name}</span>}
+              {clientData && <span className="text-violet-600 flex items-center gap-1 text-[10px] md:text-xs"><UserIcon size={10} className="md:w-3 md:h-3" /> {clientData.name}</span>}
 
               {/* Real-time Indicators */}
-              <span className="px-2 py-1 rounded-lg flex items-center gap-1 bg-emerald-100 text-emerald-700">
-                <TrendingUp size={12} />
+              <span className="hidden sm:flex px-2 py-1 rounded-lg items-center gap-1 bg-emerald-100 text-emerald-700 text-[10px] md:text-xs">
+                <TrendingUp size={10} className="md:w-3 md:h-3" />
                 R$ {getTodayTotal().toFixed(2)}
               </span>
-              <span className="px-2 py-1 rounded-lg flex items-center gap-1 bg-blue-100 text-blue-700">
+              <span className="hidden md:flex px-2 py-1 rounded-lg items-center gap-1 bg-blue-100 text-blue-700 text-xs">
                 Ticket: R$ {getAverageTicket().toFixed(2)}
               </span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 md:gap-2">
           {/* History Button */}
           <button
             onClick={() => setHistoryOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold transition-colors bg-slate-50 hover:bg-slate-100 text-slate-600"
+            className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-2.5 rounded-xl md:rounded-2xl text-xs md:text-sm font-bold transition-colors bg-slate-50 hover:bg-slate-100 text-slate-600"
             title="Histórico de Vendas"
           >
-            <Clock size={18} />
+            <Clock size={16} className="md:w-[18px] md:h-[18px]" />
             <span className="hidden sm:inline">{todaySales.length}</span>
           </button>
 
           {/* Sound Toggle */}
           <button
             onClick={toggleSound}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold transition-colors bg-slate-50 hover:bg-slate-100 text-slate-600"
+            className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-2.5 rounded-xl md:rounded-2xl text-xs md:text-sm font-bold transition-colors bg-slate-50 hover:bg-slate-100 text-slate-600"
             title={soundEnabled ? 'Desativar Sons' : 'Ativar Sons'}
           >
-            {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            {soundEnabled ? <Volume2 size={16} className="md:w-[18px] md:h-[18px]" /> : <VolumeX size={16} className="md:w-[18px] md:h-[18px]" />}
           </button>
 
           {/* Offline/Online Status Badge */}
           <button
             onClick={() => setPendingSalesModalOpen(true)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold transition-all ${isOnline
+            className={`flex items-center gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-2.5 rounded-xl md:rounded-2xl text-xs md:text-sm font-bold transition-all ${isOnline
               ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
               : 'bg-amber-50 text-amber-700 hover:bg-amber-100 animate-pulse'
               }`}
             title={isOnline ? 'Sistema Online' : `Modo Offline - ${pendingCount} vendas pendentes`}
           >
-            {isOnline ? <Wifi size={18} /> : <WifiOff size={18} />}
+            {isOnline ? <Wifi size={16} className="md:w-[18px] md:h-[18px]" /> : <WifiOff size={16} className="md:w-[18px] md:h-[18px]" />}
             {pendingCount > 0 && (
-              <span className="bg-violet-600 text-white px-2 py-0.5 rounded-full text-xs font-black min-w-[20px] text-center">
+              <span className="bg-violet-600 text-white px-1.5 md:px-2 py-0.5 rounded-full text-[10px] md:text-xs font-black min-w-[16px] md:min-w-[20px] text-center">
                 {pendingCount}
               </span>
             )}
@@ -783,7 +792,7 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
           {/* Calculator */}
           <button
             onClick={() => setCalculatorOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold transition-colors bg-slate-50 hover:bg-slate-100 text-slate-600"
+            className="hidden md:flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold transition-colors bg-slate-50 hover:bg-slate-100 text-slate-600"
             title="Calculadora"
           >
             <Calculator size={18} />
@@ -791,36 +800,37 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
 
           {/* Exit */}
           {onExit && (
-            <button onClick={onExit} className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold transition-colors bg-slate-50 hover:bg-slate-100 text-slate-600">
-              <LogOut size={18} /> <span className="hidden sm:inline">Sair</span>
+            <button onClick={onExit} className="flex items-center gap-1 md:gap-2 px-2 md:px-5 py-2 md:py-2.5 rounded-xl md:rounded-2xl text-xs md:text-sm font-bold transition-colors bg-slate-50 hover:bg-slate-100 text-slate-600">
+              <LogOut size={16} className="md:w-[18px] md:h-[18px]" /> <span className="hidden sm:inline">Sair</span>
             </button>
           )}
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden p-4 md:p-6 gap-6">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden p-3 md:p-4 lg:p-6 gap-4 md:gap-6">
         {/* Product Grid */}
-        <div className="flex-1 flex flex-col rounded-[2.5rem] shadow-sm overflow-hidden border bg-white border-slate-100/50">
-          <div className="p-6 pb-2 space-y-3">
+        <div className="flex-1 flex flex-col rounded-2xl md:rounded-[2.5rem] shadow-sm overflow-hidden border bg-white border-slate-100/50">
+          <div className="p-4 md:p-6 pb-2 space-y-2 md:space-y-3">
             {/* Favorite Products */}
             {getFavoriteProducts().length > 0 && (
               <div>
-                <h3 className="text-xs font-bold uppercase mb-2 flex items-center gap-2 text-slate-500">
-                  <Star size={14} className="text-amber-500" />
-                  Mais Vendidos Hoje
+                <h3 className="text-[10px] md:text-xs font-bold uppercase mb-2 flex items-center gap-2 text-slate-500">
+                  <Star size={12} className="md:w-3.5 md:h-3.5 text-amber-500" />
+                  <span className="hidden sm:inline">Mais Vendidos Hoje</span>
+                  <span className="sm:hidden">Vendidos</span>
                 </h3>
-                <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-3">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-1.5 md:gap-2 mb-2 md:mb-3">
                   {getFavoriteProducts().map(product => (
                     <button
                       key={product.id}
                       onClick={() => addToCart(product)}
-                      className="p-3 rounded-xl transition-all border bg-violet-50 hover:bg-violet-100 border-violet-100"
+                      className="p-2 md:p-3 rounded-lg md:rounded-xl transition-all border bg-violet-50 hover:bg-violet-100 border-violet-100"
                     >
-                      <div className="aspect-square mb-2 bg-slate-100 rounded-lg overflow-hidden">
+                      <div className="aspect-square mb-1 md:mb-2 bg-slate-100 rounded-md md:rounded-lg overflow-hidden">
                         <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
                       </div>
-                      <p className="text-[10px] font-bold line-clamp-1 text-slate-700">{product.name}</p>
-                      <p className="text-violet-600 font-black text-xs">R$ {product.priceSell.toFixed(2)}</p>
+                      <p className="text-[9px] md:text-[10px] font-bold line-clamp-1 text-slate-700">{product.name}</p>
+                      <p className="text-violet-600 font-black text-[10px] md:text-xs">R$ {product.priceSell.toFixed(2)}</p>
                     </button>
                   ))}
                 </div>
@@ -828,12 +838,12 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
             )}
 
             {/* Category Filter */}
-            <div className="flex gap-2 overflow-x-auto pb-2">
+            <div className="flex gap-1.5 md:gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {categories.map(cat => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${selectedCategory === cat
+                  className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl font-bold text-xs md:text-sm whitespace-nowrap transition-all ${selectedCategory === cat
                     ? 'bg-violet-600 text-white shadow-lg shadow-violet-200'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
@@ -845,13 +855,13 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
 
             {/* Search Bar */}
             <div className="relative">
-              <Search className="absolute left-5 top-4 text-slate-400" size={20} />
-              <ScanBarcode className="absolute right-5 top-4 text-violet-400 animate-pulse" size={20} />
+              <Search className="absolute left-3 md:left-5 top-2.5 md:top-4 text-slate-400 w-[18px] h-[18px] md:w-5 md:h-5" />
+              <ScanBarcode className="absolute right-3 md:right-5 top-2.5 md:top-4 text-violet-400 animate-pulse w-[18px] h-[18px] md:w-5 md:h-5" />
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder="Buscar produto ou escanear..."
-                className="w-full pl-14 pr-12 py-4 rounded-3xl border-none focus:ring-2 focus:ring-violet-500 font-bold placeholder:text-slate-400 transition-all bg-slate-50 text-slate-700"
+                placeholder="Buscar ou escanear..."
+                className="w-full pl-10 md:pl-14 pr-10 md:pr-12 py-2.5 md:py-4 rounded-2xl md:rounded-3xl border-none focus:ring-2 focus:ring-violet-500 font-bold placeholder:text-slate-400 transition-all bg-slate-50 text-slate-700 text-sm md:text-base"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => {
@@ -864,63 +874,66 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 content-start">
+          <div className="flex-1 overflow-y-auto p-3 md:p-4 lg:p-6 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-3 lg:gap-4 content-start pb-32 md:pb-6">
             {filteredProducts.map(product => {
               const stockLevel = product.stock <= product.minStock ? 'low' : product.stock <= product.minStock * 2 ? 'medium' : 'high';
               const stockColor = product.stock <= 0 ? 'bg-rose-500 text-white' :
                 stockLevel === 'low' ? 'bg-amber-500 text-white' :
-                  stockLevel === 'medium' ? 'bg-blue-500 text-white' :
-                    'bg-emerald-500 text-white';
+                  stockLevel === 'medium' ? 'bg-blue-500 text-white' : 'bg-emerald-500 text-white';
 
               return (
-                <div key={product.id} className="relative group">
-                  <button
-                    onClick={() => addToCart(product)}
-                    onContextMenu={(e) => { e.preventDefault(); openQuantityModal(product); }}
-                    disabled={product.stock <= 0}
-                    className={`w-full text-left p-3 rounded-[1.5rem] transition-all duration-200 border border-transparent ${product.stock <= 0 ? 'opacity-50 grayscale cursor-not-allowed bg-slate-50' : 'bg-white hover:bg-violet-50 hover:border-violet-100 hover:shadow-lg hover:shadow-violet-100'
-                      }`}
-                  >
-                    <div className="relative aspect-square mb-3 bg-slate-100 rounded-2xl overflow-hidden">
-                      <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" />
-
-                      {/* Category Badge */}
-                      <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-sm text-white px-2 py-1 rounded-lg text-[9px] font-black flex items-center gap-1">
-                        <Tag size={10} />
-                        {product.category}
+                <button
+                  key={product.id}
+                  onClick={() => addToCart(product)}
+                  disabled={product.stock <= 0}
+                  className={`group relative bg-white rounded-xl md:rounded-2xl p-2 md:p-3 lg:p-4 border border-slate-100 transition-all duration-300 flex flex-col ${product.stock <= 0
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:border-violet-200 hover:shadow-xl hover:-translate-y-1 active:scale-95'
+                    }`}
+                >
+                  {/* Product Image */}
+                  <div className="aspect-square mb-2 md:mb-3 bg-slate-50 rounded-lg md:rounded-xl overflow-hidden relative">
+                    {product.image ? (
+                      <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-300">
+                        <Package size={32} className="md:w-10 md:h-10 lg:w-12 lg:h-12" />
                       </div>
-
-                      {/* Stock Badge */}
-                      <div className={`absolute top-2 right-2 ${stockColor} px-2 py-1 rounded-lg text-[10px] font-black shadow-sm`}>
-                        {product.stock} un
-                      </div>
-
-                      {/* Low Stock Warning */}
-                      {product.stock <= product.minStock && product.stock > 0 && (
-                        <div className="absolute top-2 left-2 bg-amber-500 text-white px-2 py-1 rounded-lg text-[9px] font-black shadow-sm">
-                          ⚠️ BAIXO
-                        </div>
-                      )}
+                    )}
+                    {/* Stock Badge */}
+                    <div className={`absolute top-1 md:top-2 right-1 md:right-2 px-1.5 md:px-2 py-0.5 md:py-1 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black ${stockColor}`}>
+                      {product.stock}
                     </div>
-                    <h3 className="font-bold text-slate-700 text-sm leading-tight mb-1 line-clamp-2 min-h-[2.5em]">{product.name}</h3>
-                    <p className="text-violet-600 font-black text-lg">R$ {product.priceSell.toFixed(2)}</p>
-                  </button>
-                  <button
-                    onClick={() => openQuantityModal(product)}
-                    disabled={product.stock <= 0}
-                    className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-violet-600 text-white p-2 rounded-xl shadow-lg hover:bg-violet-700 disabled:opacity-0"
-                    title="Adicionar quantidade"
-                  >
-                    <Plus size={16} />
-                  </button>
-                </div>
+                  </div>
+
+                  {/* Product Info */}
+                  <div className="flex-1 flex flex-col">
+                    <h3 className="font-bold text-[11px] md:text-xs lg:text-sm text-slate-800 mb-1 line-clamp-2 leading-tight">
+                      {product.name}
+                    </h3>
+                    <p className="text-[9px] md:text-[10px] text-slate-400 font-medium mb-auto">{product.category}</p>
+                    <div className="mt-2">
+                      <p className="text-violet-600 font-black text-sm md:text-base lg:text-lg">R$ {product.priceSell.toFixed(2)}</p>
+                    </div>
+                  </div>
+
+                  {/* Hover Effect */}
+                  {product.stock > 0 && (
+                    <div className="absolute inset-0 bg-violet-600/0 group-hover:bg-violet-600/5 rounded-xl md:rounded-2xl transition-colors pointer-events-none" />
+                  )}
+                </button>
               );
             })}
           </div>
         </div>
 
-        {/* Cart */}
-        <div className="w-full lg:w-[400px] bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 flex flex-col overflow-hidden border border-slate-100">
+        {/* Cart - Desktop: Sidebar / Mobile: Hidden until items added */}
+        <div className={`
+          hidden lg:flex
+          w-[400px] bg-white rounded-[2.5rem]
+          shadow-xl shadow-slate-200/50
+          flex-col overflow-hidden border border-slate-100
+        `}>
           <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
             <h2 className="text-xl font-extrabold text-slate-800 flex items-center gap-2">
               <ShoppingCart size={20} />
@@ -970,7 +983,6 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
           </div>
 
           <div className="p-6 bg-slate-900 text-white rounded-t-[2.5rem] shadow-inner mt-auto space-y-4">
-            {/* Discount Section */}
             {discountApplied > 0 && (
               <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl space-y-2">
                 <div className="flex justify-between text-sm">
@@ -984,11 +996,7 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="text-emerald-400">- R$ {discountApplied.toFixed(2)}</span>
-                    <button
-                      onClick={removeDiscount}
-                      className="text-rose-400 hover:text-rose-300 transition-colors"
-                      title="Remover desconto"
-                    >
+                    <button onClick={removeDiscount} className="text-rose-400 hover:text-rose-300 transition-colors" title="Remover desconto">
                       <X size={16} />
                     </button>
                   </div>
@@ -996,107 +1004,196 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
               </div>
             )}
 
-            {/* Discount Button */}
             {cart.length > 0 && discountApplied === 0 && (
-              <button
-                onClick={() => setDiscountModalOpen(true)}
-                className="w-full bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
-              >
+              <button onClick={() => setDiscountModalOpen(true)} className="w-full bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2">
                 <Tag size={16} />
                 Aplicar Desconto <span className="bg-white/20 px-2 py-0.5 rounded text-xs">F9</span>
               </button>
             )}
 
-            {/* Total */}
             <div className="flex justify-between items-end">
               <span className="text-slate-400 font-medium text-sm">Total a Pagar</span>
               <span className="text-4xl font-black tracking-tight">R$ {calculateFinalTotal().toFixed(2)}</span>
             </div>
 
-            {/* Finalize Button */}
-            <button
-              disabled={cart.length === 0}
-              onClick={openCheckout}
-              className="w-full bg-violet-600 hover:bg-violet-500 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-white py-5 rounded-2xl font-bold text-lg shadow-xl shadow-violet-900/20 transition-all flex items-center justify-center gap-3 active:scale-95"
-              title={cart.length === 0 ? 'Adicione produtos ao carrinho' : 'Finalizar venda (F12)'}
-            >
+            <button disabled={cart.length === 0} onClick={openCheckout} className="w-full bg-violet-600 hover:bg-violet-500 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-white py-5 rounded-2xl font-bold text-lg shadow-xl shadow-violet-900/20 transition-all flex items-center justify-center gap-3 active:scale-95" title={cart.length === 0 ? 'Adicione produtos ao carrinho' : 'Finalizar venda (F12)'}>
               Finalizar <span className="bg-white/20 px-2 py-0.5 rounded text-sm">F12</span>
             </button>
           </div>
         </div>
 
-        {/* Quantity Modal */}
-        {quantityModalOpen && selectedProduct && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in zoom-in-95 duration-200">
-            <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md p-8">
-              <div className="text-center mb-6">
-                <div className="w-20 h-20 bg-violet-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <img src={selectedProduct.image} alt={selectedProduct.name} className="w-full h-full object-cover rounded-2xl" />
+        {/* Mobile Cart Drawer & Bottom Bar */}
+        {cart.length > 0 && (
+          <>
+            {/* Backdrop */}
+            {mobileCartOpen && (
+              <div
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+                onClick={() => setMobileCartOpen(false)}
+              />
+            )}
+
+            <div className={`
+                lg:hidden fixed left-0 right-0 bg-slate-900 z-50 transition-all duration-300 ease-in-out shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)]
+                ${mobileCartOpen ? 'top-[15%] bottom-0 rounded-t-[2.5rem] flex flex-col' : 'bottom-0 rounded-t-3xl'}
+              `}>
+              {/* Drag Handle / Header */}
+              <div
+                className="p-4 cursor-pointer border-b border-slate-800"
+                onClick={() => setMobileCartOpen(!mobileCartOpen)}
+              >
+                <div className="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-4" />
+
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 text-white">
+                    <div className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Total a Pagar</div>
+                    <div className="text-3xl font-black">R$ {calculateFinalTotal().toFixed(2)}</div>
+                    <div className="text-sm text-slate-400 mt-1">{cart.reduce((acc, item) => acc + item.quantity, 0)} itens no carrinho</div>
+                  </div>
+
+                  {!mobileCartOpen && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openCheckout(); }}
+                      className="bg-violet-600 hover:bg-violet-500 text-white px-6 py-3 rounded-xl font-bold text-base shadow-lg shadow-violet-600/50 transition-all active:scale-95 flex items-center gap-2"
+                    >
+                      Finalizar <ArrowRight size={18} />
+                    </button>
+                  )}
+
+                  <button
+                    className={`w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 transition-transform ${mobileCartOpen ? 'rotate-180' : ''}`}
+                  >
+                    <ChevronUp size={24} />
+                  </button>
                 </div>
-                <h3 className="text-2xl font-extrabold text-slate-800 mb-1">{selectedProduct.name}</h3>
-                <p className="text-slate-500 font-medium">R$ {selectedProduct.priceSell.toFixed(2)} por unidade</p>
-                <p className="text-sm text-slate-400 mt-2">Estoque disponível: <span className="font-bold text-slate-600">{selectedProduct.stock} un</span></p>
               </div>
 
-              <form onSubmit={(e) => { e.preventDefault(); handleQuantitySubmit(); }} className="space-y-6">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2 text-center">Quantidade</label>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setQuantityInput(Math.max(1, parseInt(quantityInput) - 1).toString())}
-                      className="w-12 h-12 bg-slate-100 hover:bg-slate-200 rounded-xl flex items-center justify-center font-bold text-slate-600 transition-colors"
-                    >
-                      <Minus size={20} />
-                    </button>
-                    <input
-                      type="number"
-                      min="1"
-                      max={selectedProduct.stock}
-                      value={quantityInput}
-                      onChange={(e) => setQuantityInput(e.target.value)}
-                      className="flex-1 text-center text-3xl font-black bg-slate-50 border-none rounded-2xl py-4 focus:ring-2 focus:ring-violet-500"
-                      autoFocus
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setQuantityInput(Math.min(selectedProduct.stock, parseInt(quantityInput) + 1).toString())}
-                      className="w-12 h-12 bg-slate-100 hover:bg-slate-200 rounded-xl flex items-center justify-center font-bold text-slate-600 transition-colors"
-                    >
-                      <Plus size={20} />
-                    </button>
-                  </div>
-                  <div className="mt-4 text-center">
-                    <div className="text-sm text-slate-500">Total</div>
-                    <div className="text-2xl font-black text-violet-600">
-                      R$ {(selectedProduct.priceSell * parseInt(quantityInput || '1')).toFixed(2)}
-                    </div>
-                  </div>
-                </div>
+              {/* Expanded Content */}
+              {mobileCartOpen && (
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50 rounded-t-[2.5rem] mt-2 h-full">
+                  <h3 className="text-slate-800 font-bold px-2 pt-2 pb-1">Itens do Pedido</h3>
 
-                <div className="flex gap-3">
+                  {/* Items List - Mobile Optimized */}
+                  {cart.map(item => (
+                    <div key={item.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex gap-4 items-center">
+                      <div className="w-16 h-16 rounded-xl bg-slate-100 flex-shrink-0 overflow-hidden">
+                        <img src={item.image} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-slate-800 text-base truncate">{item.name}</h4>
+                        <div className="text-sm text-slate-500 font-medium mb-2">R$ {item.priceSell.toFixed(2)} un</div>
+
+                        {/* Controls */}
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center bg-slate-100 rounded-lg p-1">
+                            <button onClick={() => updateQuantity(item.id, -1)} className="p-2 bg-white rounded-md shadow-sm text-slate-600"><Minus size={14} /></button>
+                            <span className="w-8 text-center font-bold text-slate-800">{item.quantity}</span>
+                            <button onClick={() => updateQuantity(item.id, 1)} className="p-2 bg-white rounded-md shadow-sm text-slate-600"><Plus size={14} /></button>
+                          </div>
+                          <div className="font-black text-violet-600 text-lg ml-auto">
+                            R$ {(item.priceSell * item.quantity).toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
+                      <button onClick={() => removeFromCart(item.id)} className="text-slate-300 hover:text-rose-500 p-2"><Trash2 size={20} /></button>
+                    </div>
+                  ))}
+
+                  {/* Padding bottom for checkout button space */}
+                  <div className="h-24"></div>
+                </div>
+              )}
+
+              {/* Fixed Checkout Button when Open */}
+              {mobileCartOpen && (
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-100 pb-8 rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.1)]">
+                  <button
+                    onClick={openCheckout}
+                    className="w-full bg-violet-600 hover:bg-violet-500 text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-violet-600/30 transition-all active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    Finalizar Venda <span className="bg-white/20 px-2 py-0.5 rounded text-sm font-bold">R$ {calculateFinalTotal().toFixed(2)}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Quantity Modal */}
+      {quantityModalOpen && selectedProduct && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md p-8">
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-violet-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <img src={selectedProduct.image} alt={selectedProduct.name} className="w-full h-full object-cover rounded-2xl" />
+              </div>
+              <h3 className="text-2xl font-extrabold text-slate-800 mb-1">{selectedProduct.name}</h3>
+              <p className="text-slate-500 font-medium">R$ {selectedProduct.priceSell.toFixed(2)} por unidade</p>
+              <p className="text-sm text-slate-400 mt-2">Estoque disponível: <span className="font-bold text-slate-600">{selectedProduct.stock} un</span></p>
+            </div>
+
+            <form onSubmit={(e) => { e.preventDefault(); handleQuantitySubmit(); }} className="space-y-6">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2 text-center">Quantidade</label>
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setQuantityModalOpen(false)}
-                    className="flex-1 py-4 text-slate-600 hover:bg-slate-50 rounded-2xl font-bold transition-colors"
+                    onClick={() => setQuantityInput(Math.max(1, parseInt(quantityInput) - 1).toString())}
+                    className="w-12 h-12 bg-slate-100 hover:bg-slate-200 rounded-xl flex items-center justify-center font-bold text-slate-600 transition-colors"
                   >
-                    Cancelar <span className="text-xs text-slate-400">(ESC)</span>
+                    <Minus size={20} />
                   </button>
+                  <input
+                    type="number"
+                    min="1"
+                    max={selectedProduct.stock}
+                    value={quantityInput}
+                    onChange={(e) => setQuantityInput(e.target.value)}
+                    className="flex-1 text-center text-3xl font-black bg-slate-50 border-none rounded-2xl py-4 focus:ring-2 focus:ring-violet-500"
+                    autoFocus
+                  />
                   <button
-                    type="submit"
-                    className="flex-[2] py-4 bg-violet-600 text-white hover:bg-violet-700 rounded-2xl font-bold shadow-lg shadow-violet-200 transition-all flex items-center justify-center gap-2"
+                    type="button"
+                    onClick={() => setQuantityInput(Math.min(selectedProduct.stock, parseInt(quantityInput) + 1).toString())}
+                    className="w-12 h-12 bg-slate-100 hover:bg-slate-200 rounded-xl flex items-center justify-center font-bold text-slate-600 transition-colors"
                   >
-                    <ShoppingCart size={20} />
-                    Adicionar
+                    <Plus size={20} />
                   </button>
                 </div>
-              </form>
-            </div>
-          </div>
-        )}
+                <div className="mt-4 text-center">
+                  <div className="text-sm text-slate-500">Total</div>
+                  <div className="text-2xl font-black text-violet-600">
+                    R$ {(selectedProduct.priceSell * parseInt(quantityInput || '1')).toFixed(2)}
+                  </div>
+                </div>
+              </div>
 
-        {/* Checkout Modal */}
-        {checkoutModalOpen && (
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setQuantityModalOpen(false)}
+                  className="flex-1 py-4 text-slate-600 hover:bg-slate-50 rounded-2xl font-bold transition-colors"
+                >
+                  Cancelar <span className="text-xs text-slate-400">(ESC)</span>
+                </button>
+                <button
+                  type="submit"
+                  className="flex-[2] py-4 bg-violet-600 text-white hover:bg-violet-700 rounded-2xl font-bold shadow-lg shadow-violet-200 transition-all flex items-center justify-center gap-2"
+                >
+                  <ShoppingCart size={20} />
+                  Adicionar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )
+      }
+
+      {/* Checkout Modal */}
+      {
+        checkoutModalOpen && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in zoom-in-95 duration-200">
             <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
               <div className="p-8 border-b border-slate-100 flex justify-between items-center">
@@ -1135,7 +1232,7 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
                     <div key={idx} className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm pl-5 animate-in slide-in-from-bottom-2">
                       <div className="flex-1 font-bold text-slate-700">{payment.method}</div>
                       <input
-                        type="number" step="0.01"
+                        type="number" step="0.01" inputMode="decimal"
                         className="w-32 bg-slate-50 border-none rounded-xl p-2 text-right font-black text-slate-800 focus:ring-2 focus:ring-violet-500"
                         value={payment.amount}
                         onChange={(e) => updatePaymentAmount(idx, parseFloat(e.target.value))}
@@ -1185,33 +1282,35 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
               </div>
             </div>
           </div>
-        )}
+        )
+      }
 
-        {/* Calculator Modal */}
-        <CalculatorModal
-          isOpen={calculatorOpen}
-          onClose={() => setCalculatorOpen(false)}
-          display={calcDisplay}
-          onNumber={handleCalcNumber}
-          onOperation={handleCalcOperation}
-          onEquals={handleCalcEquals}
-          onClear={handleCalcClear}
-        />
+      {/* Calculator Modal */}
+      <CalculatorModal
+        isOpen={calculatorOpen}
+        onClose={() => setCalculatorOpen(false)}
+        display={calcDisplay}
+        onNumber={handleCalcNumber}
+        onOperation={handleCalcOperation}
+        onEquals={handleCalcEquals}
+        onClear={handleCalcClear}
+      />
 
-        {/* Discount Modal */}
-        <DiscountModal
-          isOpen={discountModalOpen}
-          onClose={() => setDiscountModalOpen(false)}
-          discountType={discountType}
-          setDiscountType={setDiscountType}
-          discountValue={discountValue}
-          setDiscountValue={setDiscountValue}
-          onApply={applyDiscount}
-          subtotal={calculateSubtotal()}
-        />
+      {/* Discount Modal */}
+      <DiscountModal
+        isOpen={discountModalOpen}
+        onClose={() => setDiscountModalOpen(false)}
+        discountType={discountType}
+        setDiscountType={setDiscountType}
+        discountValue={discountValue}
+        setDiscountValue={setDiscountValue}
+        onApply={applyDiscount}
+        subtotal={calculateSubtotal()}
+      />
 
-        {/* Sales History Modal */}
-        {historyOpen && (
+      {/* Sales History Modal */}
+      {
+        historyOpen && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
               <div className="p-6 border-b border-slate-100 flex justify-between items-center">
@@ -1279,24 +1378,26 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
               </div>
             </div>
           </div>
-        )}
+        )
+      }
 
-        {/* Sale Success Modal */}
-        {receiptModalOpen && completedSale && (
+      {/* Sale Success Modal */}
+      {
+        receiptModalOpen && completedSale && (
           <SaleSuccessModal
             sale={completedSale}
             onClose={handleNextClient}
             onNewClient={handleNextClient}
           />
-        )}
+        )
+      }
 
-        {/* Pending Sales Modal */}
-        <PendingSalesModal
-          isOnline={isOnline}
-          isOpen={pendingSalesModalOpen}
-          onClose={() => setPendingSalesModalOpen(false)}
-        />
-      </div>
+      {/* Pending Sales Modal */}
+      <PendingSalesModal
+        isOnline={isOnline}
+        isOpen={pendingSalesModalOpen}
+        onClose={() => setPendingSalesModalOpen(false)}
+      />
     </div>
   );
 };

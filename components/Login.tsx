@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User } from '../types';
 import { SupabaseService } from '../services/supabaseService';
-import { Lock, Mail, ArrowRight, Disc, X, CheckCircle2, TrendingUp, Package, BarChart3, Sparkles } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Disc, X, CheckCircle2, TrendingUp, Package, BarChart3, Sparkles, Store } from 'lucide-react';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -77,29 +77,36 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onRegister }) => {
 
   return (
     <div className="min-h-screen bg-[#F3F5F9] flex items-center justify-center p-6">
-      <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 w-full max-w-4xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
+      <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-2xl shadow-slate-200/50 w-full max-w-4xl overflow-hidden flex flex-col md:flex-row min-h-[500px] md:min-h-[600px]">
 
-        {/* Left Side - Brand */}
-        <div className="md:w-1/2 bg-slate-900 p-12 text-white flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-violet-600 rounded-full blur-[100px] -mr-32 -mt-32 opacity-50"></div>
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-600 rounded-full blur-[100px] -ml-32 -mb-32 opacity-50"></div>
+        {/* Left Side - Branding */}
+        <div className="md:w-1/2 bg-slate-900 p-8 md:p-12 text-white flex flex-col justify-between relative overflow-hidden">
+          {/* Decorative Elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl"></div>
 
           <div className="relative z-10">
-            <div className="w-14 h-14 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-violet-900/50">
-              <Disc size={32} className="text-white animate-spin-slow" style={{ animationDuration: '10s' }} />
+            <div className="flex items-center gap-3 mb-4 md:mb-6">
+              <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-tr from-violet-500 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/50">
+                <Disc size={28} className="md:w-8 md:h-8 animate-spin-slow" style={{ animationDuration: '10s' }} />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-black tracking-tight">
+                  Gestor<span className="text-violet-400">Pro</span>
+                </h1>
+                <p className="text-xs md:text-sm text-slate-400 font-medium">PDV & Estoque Inteligente</p>
+              </div>
             </div>
-            <h1 className="text-4xl font-extrabold tracking-tight mb-2">Gestor<span className="text-violet-400">Pro</span></h1>
-            <p className="text-slate-400 font-medium mb-8">Sistema de Gestão Inteligente</p>
 
             {/* Benefits Section */}
-            <div className="space-y-4 mt-8">
+            <div className="space-y-3 md:space-y-4 mt-6 md:mt-8">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-violet-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <TrendingUp size={20} className="text-violet-400" />
+                <div className="w-8 h-8 bg-violet-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Store className="w-4 h-4 text-violet-400" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white mb-1">Controle Total de Vendas</h3>
-                  <p className="text-sm text-slate-400">Gerencie todas as transações com PDV moderno e intuitivo</p>
+                  <h3 className="font-bold text-sm md:text-base">Gestão Completa</h3>
+                  <p className="text-xs md:text-sm text-slate-400">Controle total do seu negócio</p>
                 </div>
               </div>
 
@@ -140,11 +147,12 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onRegister }) => {
           </div>
         </div>
 
-        {/* Right Side - Form */}
-        <div className="md:w-1/2 p-12 flex flex-col justify-center">
-          <h2 className="text-3xl font-bold text-slate-800 mb-2">Bem-vindo</h2>
-          <p className="text-slate-500 mb-10">Faça login para acessar sua conta.</p>
-
+        {/* Right Side - Login Form */}
+        <div className="md:w-1/2 p-6 md:p-12 flex flex-col justify-center">
+          <div className="mb-6 md:mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2">Bem-vindo</h2>
+            <p className="text-sm md:text-base text-slate-500">Faça login para acessar o sistema</p>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-6">
             {logoutReason && (
               <div className="bg-amber-50 text-amber-800 px-4 py-4 rounded-2xl text-sm border-2 border-amber-200 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">

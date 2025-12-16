@@ -146,18 +146,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ sales, products, onViewLow
   const avgTicket = todaySales.length > 0 ? todayTotal / todaySales.length : 0;
 
   return (
-    <div className="p-6 md:p-8 max-w-[1600px] mx-auto space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-end gap-4">
+    <div className="p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6 md:space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-3 md:gap-4">
         <div>
-          <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight">Dashboard</h1>
-          <p className="mt-2 text-slate-500">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold text-slate-800 tracking-tight">Dashboard</h1>
+          <p className="mt-1 md:mt-2 text-sm md:text-base text-slate-500">
             Visão geral do seu negócio • Atualizado agora
           </p>
         </div>
       </div>
 
       {/* Real-time Indicators */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard
           title="Vendas Hoje"
           value={`R$ ${todayTotal.toFixed(2)}`}
@@ -191,7 +191,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ sales, products, onViewLow
       </div>
 
       {/* Original Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard
           title="Faturamento Total"
           value={`R$ ${totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
@@ -222,14 +222,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ sales, products, onViewLow
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         {/* Sales Chart */}
-        <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] shadow-sm">
-          <div className="flex justify-between items-center mb-8">
-            <h3 className="text-xl font-bold text-slate-800">Vendas Recentes</h3>
-            <button className="text-violet-600 font-semibold text-sm hover:bg-violet-50 px-3 py-1 rounded-xl transition-colors">Ver Detalhes</button>
+        <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-sm">
+          <div className="flex justify-between items-center mb-6 md:mb-8">
+            <h3 className="text-lg md:text-xl font-bold text-slate-800">Vendas Recentes</h3>
+            <button className="text-violet-600 font-semibold text-xs md:text-sm hover:bg-violet-50 px-3 py-1 rounded-xl transition-colors">Ver Detalhes</button>
           </div>
-          <div className="h-80 w-full">
+          <div className="h-64 md:h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={lineChartData}>
                 <defs>
@@ -252,10 +252,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ sales, products, onViewLow
         </div>
 
         {/* Categories Chart */}
-        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm">
-          <h3 className="text-xl font-bold text-slate-800 mb-2">Categorias</h3>
-          <p className="text-sm text-slate-400 mb-6">Distribuição do mix de produtos</p>
-          <div className="h-64 w-full relative">
+        <div className="bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-sm">
+          <h3 className="text-lg md:text-xl font-bold text-slate-800 mb-2">Categorias</h3>
+          <p className="text-xs md:text-sm text-slate-400 mb-4 md:mb-6">Distribuição do mix de produtos</p>
+          <div className="h-56 md:h-64 w-full relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie

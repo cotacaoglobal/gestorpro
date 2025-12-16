@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { User, Sale, PaymentMethod } from '../types';
 import { Play, LogOut, DollarSign, FileText, Lock, ShoppingCart, User as UserIcon, Calendar, TrendingUp } from 'lucide-react';
-import { OpenBoxModal, RegisterTotalsModal, AddFundModal } from './CashModals';
+import { RegisterTotalsModal, AddFundModal } from './CashModals';
 import { SupabaseService } from '../services/supabaseService';
 
 interface OperatorHomeProps {
@@ -97,9 +97,9 @@ export const OperatorHome: React.FC<OperatorHomeProps> = ({ user, onLogout, onEn
   };
 
   return (
-    <div className="min-h-screen bg-[#F3F5F9] p-6 md:p-12 pb-24">
-      <div className="max-w-6xl mx-auto">
-        <header className="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
+    <div className="min-h-screen bg-[#F3F5F9] p-4 md:p-6 lg:p-12 pb-24">
+      <div className="max-w-7xl mx-auto">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-12 gap-4 md:gap-6">
           <div className="flex items-center gap-5">
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg border-4 border-white overflow-hidden relative">
               {user.avatar ? (
@@ -156,7 +156,17 @@ export const OperatorHome: React.FC<OperatorHomeProps> = ({ user, onLogout, onEn
             desc="Iniciar dia"
             theme="blue"
             disabled={!!activeSession}
-            onClick={() => setActiveModal('OPEN')}
+            onClick={async () => {
+              if (window.confirm('Deseja iniciar uma nova sessão de caixa?')) {
+                try {
+                  const session = await SupabaseService.openSession(user.id, user.tenantId, 0); // Fundo 0 direto
+                  handleOpenSession(session.id);
+                } catch (error) {
+                  console.error('Erro ao abrir caixa:', error);
+                  alert('Erro ao abrir caixa.');
+                }
+              }
+            }}
           />
 
           <ActionWidget
@@ -227,7 +237,7 @@ export const OperatorHome: React.FC<OperatorHomeProps> = ({ user, onLogout, onEn
 
       </div>
 
-      {activeModal === 'OPEN' && <OpenBoxModal userId={user.id} tenantId={user.tenantId} onClose={() => setActiveModal(null)} onSuccess={handleOpenSession} />}
+
       {activeModal === 'FUND' && activeSession && <AddFundModal sessionId={activeSession.id} tenantId={user.tenantId} onClose={() => setActiveModal(null)} />}
       {activeModal === 'TOTALS' && activeSession && (
         <RegisterTotalsModal

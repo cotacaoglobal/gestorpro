@@ -240,5 +240,64 @@ export interface AuditLog {
   tenantName?: string;
 }
 
+// Stock Reports Interfaces
+export interface StockFilters {
+  startDate?: string;
+  endDate?: string;
+  category?: string;
+  productId?: string;
+}
+
+export interface StockMetrics {
+  totalQuantity: number;
+  totalValue: number;
+  totalProducts: number;
+  lowStockCount: number;
+  averageValue: number;
+}
+
+export interface SalesMetrics {
+  totalQuantitySold: number;
+  totalRevenue: number;
+  totalProfit: number;
+  totalSales: number;
+  averageTicket: number;
+  profitMargin: number;
+}
+
+export interface CategoryReport {
+  categoryName: string;
+  stockQuantity: number;
+  stockValue: number;
+  salesQuantity: number;
+  salesRevenue: number;
+  salesProfit: number;
+  percentage: number;
+}
+
+export interface ProductReport {
+  productId: string;
+  productName: string;
+  category: string;
+  stockQuantity: number;
+  costPrice: number;
+  sellPrice: number;
+  stockValue: number;
+  salesQuantity: number;
+  salesRevenue: number;
+  profit: number;
+  profitMargin: number;
+}
+
+export interface ProductSalesReport {
+  productId: string;
+  productName: string;
+  category: string;
+  quantitySold: number;
+  revenue: number;
+  profit: number;
+  profitMargin: number;
+}
+
 export type ViewState = 'LOGIN' | 'REGISTER' | 'DASHBOARD' | 'INVENTORY' | 'POS' | 'HISTORY' | 'USERS' | 'OPERATOR_HOME' | 'CASH_MANAGEMENT' | 'DUPLICATE_CLEANUP' | 'STORE_SETTINGS' | 'PRINTER_SETTINGS' | 'BACKUP_DATA' | 'MANAGE_CATEGORIES' | 'NOTIFICATIONS' | 'SUBSCRIPTION'
   | 'ADMIN_DASHBOARD' | 'ADMIN_TENANTS' | 'ADMIN_PLANS' | 'ADMIN_FINANCIAL' | 'ADMIN_METRICS' | 'ADMIN_LOGS' | 'ADMIN_SETTINGS';

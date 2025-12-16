@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Product } from '../types';
-import { Plus, Search, Trash2, Edit, AlertTriangle, Upload, X, Image as ImageIcon, Printer, Filter, MoreHorizontal, Copy, ChevronDown, SlidersHorizontal, XCircle, ArrowUpDown } from 'lucide-react';
+import { Product, User } from '../types';
+import { Plus, Search, Trash2, Edit, AlertTriangle, Upload, X, Image as ImageIcon, Printer, Filter, MoreHorizontal, Copy, ChevronDown, SlidersHorizontal, XCircle, ArrowUpDown, BarChart3 } from 'lucide-react';
+import { StockReports } from './StockReports';
 
 interface InventoryProps {
   products: Product[];
   onUpdate: (product: Product, isNew: boolean) => Promise<void>;
   onDelete: (productId: string) => Promise<void>;
   initialFilterLowStock?: boolean;
+  user: User;
 }
 
-export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDelete, initialFilterLowStock = false }) => {
+export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDelete, initialFilterLowStock = false, user }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [filterLowStock, setFilterLowStock] = useState(initialFilterLowStock);
+  const [showReports, setShowReports] = useState(false);
 
   // Advanced Filters
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
@@ -264,23 +267,51 @@ export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDele
       return sortOrder === 'asc' ? comparison : -comparison;
     });
 
+  // If showing reports, render StockReports component
+  if (showReports) {
+    return (
+      <div className="p-6 md:p-8 max-w-[1600px] mx-auto h-full flex flex-col">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">Estoque</h2>
+            <p className="text-slate-500 font-medium">Relatórios e análises detalhadas</p>
+          </div>
+          <button
+            onClick={() => setShowReports(false)}
+            className="bg-white hover:bg-slate-50 text-slate-700 px-6 py-3 rounded-2xl flex items-center gap-2 font-bold shadow-sm border border-slate-200 transition-all"
+          >
+            ← Voltar para Produtos
+          </button>
+        </div>
+        <StockReports user={user} />
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6 md:p-8 max-w-[1600px] mx-auto h-full flex flex-col">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+    <div className="p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto h-full flex flex-col">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3 md:gap-4">
         <div>
-          <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">Estoque</h2>
-          <p className="text-slate-500 font-medium">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Estoque</h2>
+          <p className="text-sm md:text-base text-slate-500 font-medium">
             Gerencie seus produtos e preços • {filteredProducts.length} de {products.length} produtos
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row gap-2 md:gap-3 w-full md:w-auto">
+          <button
+            onClick={() => setShowReports(true)}
+            className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl md:rounded-2xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-violet-200 transition-all text-sm md:text-base"
+          >
+            <BarChart3 size={18} className="md:w-5 md:h-5" />
+            <span>📊 Relatórios</span>
+          </button>
           <div className="relative flex-1 md:w-80">
-            <Search className="absolute left-4 top-3.5 text-slate-400" size={20} />
+            <Search className="absolute left-3 md:left-4 top-2.5 md:top-3.5 text-slate-400" size={18} />
             <input
               type="text"
               placeholder="Buscar produto..."
-              className="w-full pl-12 pr-4 py-3 rounded-2xl border-none bg-white shadow-sm focus:ring-2 focus:ring-violet-500 text-slate-700 placeholder:text-slate-400 font-medium"
+              className="w-full pl-10 md:pl-12 pr-3 md:pr-4 py-2.5 md:py-3 rounded-xl md:rounded-2xl border-none bg-white shadow-sm focus:ring-2 focus:ring-violet-500 text-slate-700 placeholder:text-slate-400 font-medium text-sm md:text-base"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -288,26 +319,26 @@ export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDele
 
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`px-5 py-3 rounded-2xl flex items-center gap-2 font-semibold transition-all shadow-sm ${hasActiveFilters || showFilters
-                ? 'bg-violet-100 text-violet-700 shadow-violet-100'
-                : 'bg-white text-slate-600 hover:bg-slate-50'
+            className={`px-4 md:px-5 py-2.5 md:py-3 rounded-xl md:rounded-2xl flex items-center gap-2 font-semibold transition-all shadow-sm text-sm md:text-base ${hasActiveFilters || showFilters
+              ? 'bg-violet-100 text-violet-700 shadow-violet-100'
+              : 'bg-white text-slate-600 hover:bg-slate-50'
               }`}
           >
-            <SlidersHorizontal size={18} />
-            Filtros
+            <SlidersHorizontal size={16} className="md:w-[18px] md:h-[18px]" />
+            <span className="hidden sm:inline">Filtros</span>
             {hasActiveFilters && (
               <span className="bg-violet-600 text-white px-2 py-0.5 rounded-full text-xs font-black min-w-[20px] text-center">
                 {[selectedCategory !== 'Todas', stockFilter !== 'all', priceMin !== '', priceMax !== ''].filter(Boolean).length}
               </span>
             )}
-            <ChevronDown size={16} className={`transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+            <ChevronDown size={14} className={`md:w-4 md:h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
           </button>
 
           <button
             onClick={() => handleOpenModal()}
-            className="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-2xl flex items-center gap-2 font-bold shadow-lg shadow-violet-200 transition-transform active:scale-95"
+            className="bg-violet-600 hover:bg-violet-700 text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl md:rounded-2xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-violet-200 transition-transform active:scale-95 text-sm md:text-base"
           >
-            <Plus size={20} /> <span>Novo Produto</span>
+            <Plus size={18} className="md:w-5 md:h-5" /> <span>Novo</span>
           </button>
         </div>
       </div>
@@ -424,86 +455,143 @@ export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDele
 
       <div className="bg-white rounded-[2.5rem] shadow-sm flex-1 overflow-hidden flex flex-col">
         <div className="overflow-y-auto flex-1">
-          <table className="w-full text-left text-sm text-slate-600">
-            <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs tracking-wider sticky top-0 z-10">
-              <tr>
-                <th className="px-8 py-5">Produto</th>
-                <th className="px-8 py-5">Categoria</th>
-                <th className="px-8 py-5">Preço</th>
-                <th className="px-8 py-5">Estoque</th>
-                <th className="px-8 py-5 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filteredProducts.map((product) => (
-                <tr key={product.id} className="hover:bg-violet-50/30 transition-colors group">
-                  <td className="px-8 py-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden shadow-sm">
-                        <img src={product.image} alt="" className="w-full h-full object-cover" />
+          <div className="overflow-y-auto flex-1 pb-20 md:pb-0">
+            {/* Desktop Table View */}
+            <table className="w-full text-left text-sm text-slate-600 hidden md:table">
+              <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs tracking-wider sticky top-0 z-10">
+                <tr>
+                  <th className="px-8 py-5">Produto</th>
+                  <th className="px-8 py-5">Categoria</th>
+                  <th className="px-8 py-5">Preço</th>
+                  <th className="px-8 py-5">Estoque</th>
+                  <th className="px-8 py-5 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {filteredProducts.map((product) => (
+                  <tr key={product.id} className="hover:bg-violet-50/30 transition-colors group">
+                    <td className="px-8 py-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden shadow-sm">
+                          <img src={product.image} alt="" className="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-slate-800 text-base">{product.name}</div>
+                          <div className="text-xs text-slate-400 font-medium tracking-wide">{product.barcode}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-bold text-slate-800 text-base">{product.name}</div>
-                        <div className="text-xs text-slate-400 font-medium tracking-wide">{product.barcode}</div>
+                    </td>
+                    <td className="px-8 py-4">
+                      <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg text-xs font-bold uppercase">
+                        {product.category}
+                      </span>
+                    </td>
+                    <td className="px-8 py-4">
+                      <div className="font-bold text-slate-800 text-base">R$ {product.priceSell.toFixed(2)}</div>
+                      <div className="text-xs text-slate-400">Custo: R$ {product.priceCost.toFixed(2)}</div>
+                    </td>
+                    <td className="px-8 py-4">
+                      {product.stock <= product.minStock ? (
+                        <div className="flex items-center gap-2 text-rose-600 bg-rose-50 px-3 py-1.5 rounded-xl w-fit font-bold text-xs">
+                          <AlertTriangle size={14} /> {product.stock} un
+                        </div>
+                      ) : (
+                        <div className="text-slate-600 font-bold bg-slate-100 px-3 py-1.5 rounded-xl w-fit text-xs">
+                          {product.stock} un
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-8 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => handleBulkPrint(product)}
+                          title="Imprimir Etiquetas (Estoque)"
+                          className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
+                        >
+                          <Copy size={18} />
+                        </button>
+                        <button
+                          onClick={() => handlePrintBarcode(product)}
+                          title="Imprimir Etiqueta Única"
+                          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                        >
+                          <Printer size={18} />
+                        </button>
+                        <button onClick={() => handleOpenModal(product)} className="p-2 text-violet-500 hover:text-violet-700 hover:bg-violet-50 rounded-xl transition-colors">
+                          <Edit size={18} />
+                        </button>
+                        <button onClick={() => handleDelete(product.id)} className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors">
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Mobile List View (Cards) */}
+            <div className="md:hidden space-y-4 p-4">
+              {filteredProducts.map((product) => (
+                <div key={product.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-4">
+                  <div className="flex gap-4">
+                    <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shadow-sm flex-shrink-0">
+                      <img src={product.image} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-bold text-slate-800 text-sm line-clamp-2">{product.name}</h4>
+                        {product.stock <= product.minStock && (
+                          <AlertTriangle size={16} className="text-rose-500 flex-shrink-0 ml-2" />
+                        )}
+                      </div>
+                      <div className="text-xs text-slate-400 font-medium tracking-wide mt-1">{product.barcode}</div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase">
+                          {product.category}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${product.stock <= product.minStock ? 'bg-rose-100 text-rose-700' : 'bg-green-100 text-green-700'
+                          }`}>
+                          Estoque: {product.stock}
+                        </span>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-8 py-4">
-                    <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg text-xs font-bold uppercase">
-                      {product.category}
-                    </span>
-                  </td>
-                  <td className="px-8 py-4">
-                    <div className="font-bold text-slate-800 text-base">R$ {product.priceSell.toFixed(2)}</div>
-                    <div className="text-xs text-slate-400">Custo: R$ {product.priceCost.toFixed(2)}</div>
-                  </td>
-                  <td className="px-8 py-4">
-                    {product.stock <= product.minStock ? (
-                      <div className="flex items-center gap-2 text-rose-600 bg-rose-50 px-3 py-1.5 rounded-xl w-fit font-bold text-xs">
-                        <AlertTriangle size={14} /> {product.stock} un
-                      </div>
-                    ) : (
-                      <div className="text-slate-600 font-bold bg-slate-100 px-3 py-1.5 rounded-xl w-fit text-xs">
-                        {product.stock} un
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-8 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => handleBulkPrint(product)}
-                        title="Imprimir Etiquetas (Estoque)"
-                        className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
-                      >
-                        <Copy size={18} />
-                      </button>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+                    <div>
+                      <div className="text-xs text-slate-400">Preço Venda</div>
+                      <div className="font-black text-violet-600 text-lg">R$ {product.priceSell.toFixed(2)}</div>
+                    </div>
+
+                    <div className="flex gap-2">
                       <button
                         onClick={() => handlePrintBarcode(product)}
-                        title="Imprimir Etiqueta Única"
-                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                        className="p-2.5 text-slate-400 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors"
                       >
-                        <Printer size={18} />
+                        <Printer size={20} />
                       </button>
-                      <button onClick={() => handleOpenModal(product)} className="p-2 text-violet-500 hover:text-violet-700 hover:bg-violet-50 rounded-xl transition-colors">
-                        <Edit size={18} />
+                      <button onClick={() => handleOpenModal(product)} className="p-2.5 text-white bg-violet-600 hover:bg-violet-700 rounded-xl transition-colors shadow-lg shadow-violet-200">
+                        <Edit size={20} />
                       </button>
-                      <button onClick={() => handleDelete(product.id)} className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors">
-                        <Trash2 size={18} />
+                      <button onClick={() => handleDelete(product.id)} className="p-2.5 text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors">
+                        <Trash2 size={20} />
                       </button>
                     </div>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-          {filteredProducts.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                <Search size={24} className="opacity-50" />
-              </div>
-              <p className="font-medium">Nenhum produto encontrado</p>
             </div>
-          )}
+
+            {filteredProducts.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                  <Search size={24} className="opacity-50" />
+                </div>
+                <p className="font-medium">Nenhum produto encontrado</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -561,7 +649,7 @@ export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDele
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Preço Custo</label>
                   <div className="relative">
                     <span className="absolute left-4 top-4 text-slate-400 font-bold">R$</span>
-                    <input required type="number" step="0.01" className="w-full bg-slate-50 border-none rounded-xl pl-10 pr-4 py-4 focus:ring-2 focus:ring-violet-500 font-bold text-slate-800" value={formData.priceCost || ''} onChange={e => setFormData({ ...formData, priceCost: parseFloat(e.target.value) })} />
+                    <input required type="number" step="0.01" inputMode="decimal" className="w-full bg-slate-50 border-none rounded-xl pl-10 pr-4 py-4 focus:ring-2 focus:ring-violet-500 font-bold text-slate-800" value={formData.priceCost || ''} onChange={e => setFormData({ ...formData, priceCost: parseFloat(e.target.value) })} />
                   </div>
                 </div>
 
@@ -569,7 +657,7 @@ export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDele
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Preço Venda</label>
                   <div className="relative">
                     <span className="absolute left-4 top-4 text-slate-400 font-bold">R$</span>
-                    <input required type="number" step="0.01" className="w-full bg-slate-50 border-none rounded-xl pl-10 pr-4 py-4 focus:ring-2 focus:ring-violet-500 font-bold text-slate-800" value={formData.priceSell || ''} onChange={e => setFormData({ ...formData, priceSell: parseFloat(e.target.value) })} />
+                    <input required type="number" step="0.01" inputMode="decimal" className="w-full bg-slate-50 border-none rounded-xl pl-10 pr-4 py-4 focus:ring-2 focus:ring-violet-500 font-bold text-slate-800" value={formData.priceSell || ''} onChange={e => setFormData({ ...formData, priceSell: parseFloat(e.target.value) })} />
                   </div>
                 </div>
 

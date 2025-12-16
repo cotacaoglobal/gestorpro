@@ -76,11 +76,11 @@ export const SalesHistory: React.FC<HistoryProps> = ({ sales, user }) => {
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
+    <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4 md:gap-6">
         <div>
-          <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">Histórico</h2>
-          <p className="text-slate-500 font-medium">Registro completo de transações</p>
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-extrabold text-slate-800 tracking-tight">Histórico de Vendas</h2>
+          <p className="text-sm md:text-base text-slate-500 mt-1 md:mt-2">Visualize todas as transações realizadas</p>
         </div>
 
         <div className="flex flex-wrap gap-2 items-center bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
