@@ -53,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Mobile Hamburger Button */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-30 w-12 h-12 bg-violet-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-violet-200"
+        className="md:hidden fixed top-4 right-4 z-30 w-12 h-12 bg-violet-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-violet-200"
       >
         <Menu size={24} />
       </button>
