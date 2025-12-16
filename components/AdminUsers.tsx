@@ -67,10 +67,10 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({ user }) => {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-2.5 max-w-5xl mx-auto">
       <h2 className="text-2xl font-bold text-slate-800 mb-6">Gerenciar Acessos</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
         {/* Create User Form */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
           <h3 className="text-lg font-bold mb-4">Novo Usuário</h3>
@@ -89,27 +89,29 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({ user }) => {
         {/* User List */}
         <div className="md:col-span-2 space-y-4">
           {users.map(user => (
-            <div key={user.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${user.role === 'admin' ? 'bg-purple-100 text-purple-600' : 'bg-slate-100 text-slate-600'}`}>
+            <div key={user.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${user.role === 'admin' ? 'bg-purple-100 text-purple-600' : 'bg-slate-100 text-slate-600'}`}>
                   {user.role === 'admin' ? <ShieldAlert size={20} /> : <UserIcon size={20} />}
                 </div>
-                <div>
-                  <h4 className="font-bold text-slate-800">{user.name}</h4>
-                  <p className="text-xs text-slate-500">{user.email}</p>
+                <div className="min-w-0">
+                  <h4 className="font-bold text-slate-800 truncate">{user.name}</h4>
+                  <p className="text-xs text-slate-500 truncate">{user.email}</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
                 <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${user.role === 'admin' ? 'bg-purple-50 text-purple-700' : 'bg-slate-50 text-slate-700'}`}>
                   {user.role}
                 </span>
-                <button onClick={() => toggleRole(user)} className="text-xs text-blue-600 hover:underline">
-                  Trocar Função
-                </button>
-                <button onClick={() => handleDelete(user.id)} className="p-2 text-red-400 hover:text-red-600">
-                  <Trash2 size={16} />
-                </button>
+                <div className="flex gap-2">
+                  <button onClick={() => toggleRole(user)} className="text-xs text-blue-600 hover:underline whitespace-nowrap">
+                    Trocar Função
+                  </button>
+                  <button onClick={() => handleDelete(user.id)} className="p-2 text-red-400 hover:text-red-600">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}

@@ -189,7 +189,7 @@ export const DuplicateCleanup: React.FC<DuplicateCleanupProps> = ({ user, onComp
     }
 
     return (
-        <div className="p-6 md:p-8 max-w-7xl mx-auto">
+        <div className="p-2.5 md:p-8 max-w-7xl mx-auto">
             {/* Header */}
             <div className="mb-8">
                 <div className="flex items-center gap-3 mb-2">
@@ -205,22 +205,22 @@ export const DuplicateCleanup: React.FC<DuplicateCleanupProps> = ({ user, onComp
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                     <div className="text-xs font-bold text-slate-400 uppercase mb-2">Total de Vendas</div>
                     <div className="text-2xl font-black text-slate-800">{sales.length}</div>
                 </div>
 
-                <div className="bg-rose-50 p-6 rounded-3xl border border-rose-100">
+                <div className="bg-rose-50 p-6 rounded-2xl border border-rose-100">
                     <div className="text-xs font-bold text-rose-500 uppercase mb-2">Duplicatas</div>
                     <div className="text-2xl font-black text-rose-600">{totalDuplicates}</div>
                 </div>
 
-                <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100">
+                <div className="bg-amber-50 p-6 rounded-2xl border border-amber-100">
                     <div className="text-xs font-bold text-amber-600 uppercase mb-2">Valor Inflacionado</div>
                     <div className="text-2xl font-black text-amber-700">R$ {estimatedLoss.toFixed(2)}</div>
                 </div>
 
-                <div className="bg-violet-50 p-6 rounded-3xl border border-violet-100">
+                <div className="bg-violet-50 p-6 rounded-2xl border border-violet-100">
                     <div className="text-xs font-bold text-violet-600 uppercase mb-2">Grupos Detectados</div>
                     <div className="text-2xl font-black text-violet-700">{duplicateGroups.length}</div>
                 </div>
@@ -261,7 +261,7 @@ export const DuplicateCleanup: React.FC<DuplicateCleanupProps> = ({ user, onComp
 
             {/* Selected Summary */}
             {selectedGroups.size > 0 && (
-                <div className="bg-violet-50 border border-violet-200 rounded-3xl p-6 mb-8">
+                <div className="bg-violet-50 border border-violet-200 rounded-2xl p-6 mb-8">
                     <div className="flex items-center justify-between">
                         <div>
                             <div className="text-sm font-bold text-violet-700 mb-1">Seleção Atual</div>
@@ -279,7 +279,7 @@ export const DuplicateCleanup: React.FC<DuplicateCleanupProps> = ({ user, onComp
 
             {/* Duplicate Groups */}
             {duplicateGroups.length === 0 && !analyzing ? (
-                <div className="text-center py-20 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-100">
+                <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-slate-100">
                     <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-500">
                         <CheckCircle size={32} />
                     </div>
@@ -291,7 +291,7 @@ export const DuplicateCleanup: React.FC<DuplicateCleanupProps> = ({ user, onComp
                     {duplicateGroups.map((group, index) => (
                         <div
                             key={index}
-                            className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-all"
+                            className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-all"
                         >
                             <div className="p-6">
                                 <div className="flex items-start gap-4">

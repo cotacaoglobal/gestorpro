@@ -42,7 +42,7 @@ export const Notifications: React.FC<NotificationsProps> = ({ user }) => {
     };
 
     return (
-        <div className="p-6 md:p-8 max-w-4xl mx-auto">
+        <div className="p-2.5 md:p-8 max-w-4xl mx-auto">
             <div className="mb-8">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center">
@@ -57,7 +57,7 @@ export const Notifications: React.FC<NotificationsProps> = ({ user }) => {
 
             <div className="space-y-6">
                 {/* Alertas de Estoque */}
-                <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center">
                             <AlertTriangle size={20} />
@@ -101,7 +101,7 @@ export const Notifications: React.FC<NotificationsProps> = ({ user }) => {
                 </div>
 
                 {/* Notificações por E-mail */}
-                <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
                             <Mail size={20} />
@@ -142,7 +142,7 @@ export const Notifications: React.FC<NotificationsProps> = ({ user }) => {
                 </div>
 
                 {/* Notificações por WhatsApp */}
-                <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center">
                             <MessageSquare size={20} />

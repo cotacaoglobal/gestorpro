@@ -76,7 +76,7 @@ export const SalesHistory: React.FC<HistoryProps> = ({ sales, user }) => {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="p-2.5 md:p-6 lg:p-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4 md:gap-6">
         <div>
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-extrabold text-slate-800 tracking-tight">Histórico de Vendas</h2>
@@ -104,7 +104,7 @@ export const SalesHistory: React.FC<HistoryProps> = ({ sales, user }) => {
 
       <div className="space-y-4">
         {filteredSales.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-100">
+          <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-slate-100">
             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
               <FileText size={32} />
             </div>
@@ -112,7 +112,7 @@ export const SalesHistory: React.FC<HistoryProps> = ({ sales, user }) => {
           </div>
         ) : (
           filteredSales.map((sale) => (
-            <div key={sale.id} className="bg-white rounded-3xl shadow-sm hover:shadow-lg transition-all border border-slate-50 overflow-hidden group">
+            <div key={sale.id} className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all border border-slate-50 overflow-hidden group">
               <div
                 className="p-6 cursor-pointer"
                 onClick={() => setExpandedSale(expandedSale === sale.id ? null : sale.id)}
@@ -134,7 +134,7 @@ export const SalesHistory: React.FC<HistoryProps> = ({ sales, user }) => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-8 text-sm">
+                  <div className="flex flex-wrap items-center gap-4 md:gap-8 text-sm mt-2 md:mt-0">
                     <div className="flex items-center gap-2 text-slate-500">
                       <UserIcon size={16} /> <span className="font-semibold text-slate-700">{sale.customerName}</span>
                     </div>

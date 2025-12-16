@@ -81,7 +81,7 @@ export const OperatorHome: React.FC<OperatorHomeProps> = ({ user, onLogout, onEn
       <button
         onClick={onClick}
         disabled={disabled}
-        className={`p-8 rounded-[2rem] border-2 text-left transition-all duration-300 relative overflow-hidden group w-full h-full flex flex-col justify-between ${t.bg} ${t.border} ${disabled ? 'cursor-not-allowed opacity-70' : `${t.hover} hover:-translate-y-1 hover:shadow-xl`}`}
+        className={`p-4 rounded-2xl border-2 text-left transition-all duration-300 relative overflow-hidden group w-full h-full flex flex-col justify-between ${t.bg} ${t.border} ${disabled ? 'cursor-not-allowed opacity-70' : `${t.hover} hover:-translate-y-1 hover:shadow-xl`}`}
       >
         <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-lg transition-transform group-hover:scale-110 ${t.iconBg} ${t.iconColor}`}>
           <Icon size={32} />
@@ -97,7 +97,7 @@ export const OperatorHome: React.FC<OperatorHomeProps> = ({ user, onLogout, onEn
   };
 
   return (
-    <div className="min-h-screen bg-[#F3F5F9] p-4 md:p-6 lg:p-12 pb-24">
+    <div className="min-h-screen bg-[#F3F5F9] p-2.5 md:p-4 lg:p-6 pb-24">
       <div className="max-w-7xl mx-auto">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-12 gap-4 md:gap-6">
           <div className="flex items-center gap-5">
@@ -122,7 +122,7 @@ export const OperatorHome: React.FC<OperatorHomeProps> = ({ user, onLogout, onEn
         </header>
 
         {activeSession ? (
-          <div className="bg-emerald-600 text-white p-8 rounded-[2.5rem] mb-12 flex flex-col md:flex-row justify-between items-center shadow-xl shadow-emerald-200 relative overflow-hidden">
+          <div className="bg-emerald-600 text-white p-6 rounded-2xl mb-6 flex flex-col md:flex-row justify-between items-center shadow-xl shadow-emerald-200 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl -mr-20 -mt-20"></div>
             <div className="relative z-10">
               <span className="font-bold flex items-center gap-3 text-lg mb-1">
@@ -140,7 +140,7 @@ export const OperatorHome: React.FC<OperatorHomeProps> = ({ user, onLogout, onEn
             </button>
           </div>
         ) : (
-          <div className="bg-slate-800 text-slate-300 p-8 rounded-[2.5rem] mb-12 flex items-center gap-4 shadow-xl">
+          <div className="bg-slate-800 text-slate-300 p-6 rounded-2xl mb-6 flex items-center gap-4 shadow-xl">
             <div className="p-3 bg-slate-700 rounded-xl"><Lock size={24} /></div>
             <div>
               <span className="font-bold text-white block text-lg">Caixa Fechado</span>
@@ -198,7 +198,7 @@ export const OperatorHome: React.FC<OperatorHomeProps> = ({ user, onLogout, onEn
         </div>
 
         {/* Daily Report Section */}
-        <div className="bg-white rounded-[2.5rem] shadow-sm p-8 border border-slate-100">
+        <div className="bg-white rounded-2xl shadow-sm p-6 border border-slate-100">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-violet-100 text-violet-600 rounded-xl flex items-center justify-center">
               <Calendar size={20} />

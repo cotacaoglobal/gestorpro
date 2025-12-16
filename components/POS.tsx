@@ -807,9 +807,9 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden p-3 md:p-4 lg:p-6 gap-4 md:gap-6">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden p-2.5 gap-2.5">
         {/* Product Grid */}
-        <div className="flex-1 flex flex-col rounded-2xl md:rounded-[2.5rem] shadow-sm overflow-hidden border bg-white border-slate-100/50">
+        <div className="flex-1 flex flex-col rounded-2xl shadow-sm overflow-hidden border bg-white border-slate-100/50">
           <div className="p-4 md:p-6 pb-2 space-y-2 md:space-y-3">
             {/* Favorite Products */}
             {getFavoriteProducts().length > 0 && (
@@ -930,7 +930,7 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
         {/* Cart - Desktop: Sidebar / Mobile: Hidden until items added */}
         <div className={`
           hidden lg:flex
-          w-[400px] bg-white rounded-[2.5rem]
+          w-[400px] bg-white rounded-2xl
           shadow-xl shadow-slate-200/50
           flex-col overflow-hidden border border-slate-100
         `}>

@@ -36,7 +36,7 @@ export const StoreSettings: React.FC<StoreSettingsProps> = ({ user }) => {
     };
 
     return (
-        <div className="p-6 md:p-8 max-w-4xl mx-auto">
+        <div className="p-2.5 md:p-8 max-w-4xl mx-auto">
             <div className="mb-8">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center">
@@ -49,11 +49,11 @@ export const StoreSettings: React.FC<StoreSettingsProps> = ({ user }) => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 space-y-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 space-y-6">
                 {/* Logo da Loja */}
                 <div>
                     <label className="block text-sm font-bold text-slate-700 mb-3">Logo da Loja</label>
-                    <div className="flex items-center gap-6">
+                    <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
                         <div className="w-32 h-32 bg-slate-100 rounded-2xl flex items-center justify-center overflow-hidden border-2 border-dashed border-slate-300">
                             {storeLogo ? (
                                 <img src={storeLogo} alt="Logo" className="w-full h-full object-contain" />

@@ -53,9 +53,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Mobile Hamburger Button */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="md:hidden fixed top-4 right-4 z-30 w-12 h-12 bg-violet-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-violet-200"
+        className="md:hidden fixed top-4 right-4 z-30 w-10 h-10 bg-violet-600 text-white rounded-lg flex items-center justify-center shadow-lg shadow-violet-200"
       >
-        <Menu size={24} />
+        <Menu size={20} />
       </button>
 
       {/* Mobile Backdrop */}
@@ -84,11 +84,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
 
         {/* Logo Area */}
-        <div className="p-8 flex items-center gap-3 flex-shrink-0">
-          <div className="w-10 h-10 bg-gradient-to-tr from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-violet-200">
+        <div className="p-6 flex items-center gap-3 flex-shrink-0">
+          <div className="w-10 h-10 bg-gradient-to-tr from-violet-600 to-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-violet-200">
             <Disc size={24} className="animate-spin-slow" style={{ animationDuration: '10s' }} />
           </div>
-          <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600 md:hidden lg:block tracking-tight">
+          <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600 md:hidden lg:block tracking-tight">
             Gestor<span className="text-violet-600">Pro</span>
           </span>
         </div>
@@ -102,13 +102,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 key={item.id}
                 onClick={() => handleViewChange(item.id as ViewState)}
-                className={`w-full flex items-center p-4 rounded-2xl transition-all duration-300 group relative overflow-hidden ${isActive
-                  ? 'bg-violet-600 text-white shadow-lg shadow-violet-200 translate-x-1'
+                className={`w-full flex items-center p-2.5 rounded-lg transition-all duration-300 group relative overflow-hidden ${isActive
+                  ? 'bg-violet-600 text-white shadow-md shadow-violet-200 translate-x-1'
                   : 'text-slate-500 hover:bg-slate-50 hover:text-violet-600'
                   }`}
               >
-                <Icon size={22} className={`min-w-[22px] transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
-                <span className={`ml-4 font-semibold md:hidden lg:block ${isActive ? 'font-bold' : ''}`}>{item.label}</span>
+                <Icon size={20} className={`min-w-[20px] transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
+                <span className={`ml-3 font-semibold md:hidden lg:block ${isActive ? 'font-bold' : ''}`}>{item.label}</span>
 
                 {/* Active Indicator Dot */}
                 {isActive && (
@@ -124,19 +124,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {/* Botão Principal de Configurações */}
               <button
                 onClick={() => setConfigExpanded(!configExpanded)}
-                className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all duration-300 group ${configExpanded || configItems.some(item => currentView === item.id)
+                className={`w-full flex items-center justify-between p-2.5 rounded-lg transition-all duration-300 group ${configExpanded || configItems.some(item => currentView === item.id)
                   ? 'bg-slate-100 text-violet-600'
                   : 'text-slate-500 hover:bg-slate-50 hover:text-violet-600'
                   }`}
               >
                 <div className="flex items-center">
-                  <Settings size={22} className="min-w-[22px] transition-transform duration-300 group-hover:rotate-90" />
-                  <span className="ml-4 font-semibold md:hidden lg:block">Configurações</span>
+                  <Settings size={20} className="min-w-[20px] transition-transform duration-300 group-hover:rotate-90" />
+                  <span className="ml-3 font-semibold md:hidden lg:block">Configurações</span>
                 </div>
                 <div className="md:hidden lg:block">
                   {configExpanded ?
-                    <ChevronDown size={18} className="transition-transform" /> :
-                    <ChevronRight size={18} className="transition-transform" />
+                    <ChevronDown size={16} className="transition-transform" /> :
+                    <ChevronRight size={16} className="transition-transform" />
                   }
                 </div>
               </button>

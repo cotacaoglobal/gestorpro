@@ -289,8 +289,8 @@ export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDele
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto h-full flex flex-col">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3 md:gap-4">
+    <div className="p-2.5 max-w-[1600px] mx-auto h-full flex flex-col">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
         <div>
           <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Estoque</h2>
           <p className="text-sm md:text-base text-slate-500 font-medium">
@@ -298,10 +298,10 @@ export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDele
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 md:gap-3 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
           <button
             onClick={() => setShowReports(true)}
-            className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl md:rounded-2xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-violet-200 transition-all text-sm md:text-base"
+            className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-violet-200 transition-all text-sm md:text-base"
           >
             <BarChart3 size={18} className="md:w-5 md:h-5" />
             <span>📊 Relatórios</span>
@@ -311,7 +311,7 @@ export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDele
             <input
               type="text"
               placeholder="Buscar produto..."
-              className="w-full pl-10 md:pl-12 pr-3 md:pr-4 py-2.5 md:py-3 rounded-xl md:rounded-2xl border-none bg-white shadow-sm focus:ring-2 focus:ring-violet-500 text-slate-700 placeholder:text-slate-400 font-medium text-sm md:text-base"
+              className="w-full pl-10 md:pl-12 pr-3 md:pr-4 py-2.5 md:py-3 rounded-xl border-none bg-white shadow-sm focus:ring-2 focus:ring-violet-500 text-slate-700 placeholder:text-slate-400 font-medium text-sm md:text-base"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -319,7 +319,7 @@ export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDele
 
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`px-4 md:px-5 py-2.5 md:py-3 rounded-xl md:rounded-2xl flex items-center gap-2 font-semibold transition-all shadow-sm text-sm md:text-base ${hasActiveFilters || showFilters
+            className={`px-4 md:px-5 py-2.5 md:py-3 rounded-xl flex items-center gap-2 font-semibold transition-all shadow-sm text-sm md:text-base ${hasActiveFilters || showFilters
               ? 'bg-violet-100 text-violet-700 shadow-violet-100'
               : 'bg-white text-slate-600 hover:bg-slate-50'
               }`}
@@ -336,7 +336,7 @@ export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDele
 
           <button
             onClick={() => handleOpenModal()}
-            className="bg-violet-600 hover:bg-violet-700 text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl md:rounded-2xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-violet-200 transition-transform active:scale-95 text-sm md:text-base"
+            className="bg-violet-600 hover:bg-violet-700 text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-violet-200 transition-transform active:scale-95 text-sm md:text-base"
           >
             <Plus size={18} className="md:w-5 md:h-5" /> <span>Novo</span>
           </button>
@@ -453,7 +453,7 @@ export const Inventory: React.FC<InventoryProps> = ({ products, onUpdate, onDele
         </div>
       )}
 
-      <div className="bg-white rounded-[2.5rem] shadow-sm flex-1 overflow-hidden flex flex-col">
+      <div className="bg-white rounded-2xl shadow-sm flex-1 overflow-hidden flex flex-col">
         <div className="overflow-y-auto flex-1">
           <div className="overflow-y-auto flex-1 pb-20 md:pb-0">
             {/* Desktop Table View */}

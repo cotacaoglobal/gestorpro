@@ -113,7 +113,7 @@ export const TenantSubscriptionPanel: React.FC<TenantSubscriptionPanelProps> = (
     }
 
     return (
-        <div className="p-6 space-y-6 animate-in fade-in duration-500">
+        <div className="p-2.5 space-y-6 animate-in fade-in duration-500">
             {/* Header */}
             <div>
                 <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
@@ -125,7 +125,7 @@ export const TenantSubscriptionPanel: React.FC<TenantSubscriptionPanelProps> = (
 
             {/* Current Subscription Card */}
             {subscription ? (
-                <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-3xl border-2 border-violet-200 p-8 shadow-lg">
+                <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl border-2 border-violet-200 p-6 md:p-8 shadow-lg">
                     <div className="flex items-start justify-between mb-6">
                         <div>
                             <div className="flex items-center gap-3 mb-2">
@@ -213,7 +213,7 @@ export const TenantSubscriptionPanel: React.FC<TenantSubscriptionPanelProps> = (
                     )}
                 </div>
             ) : (
-                <div className="bg-gray-50 rounded-3xl border-2 border-gray-200 p-8 text-center">
+                <div className="bg-gray-50 rounded-2xl border-2 border-gray-200 p-8 text-center">
                     <AlertCircle className="text-gray-400 mx-auto mb-4" size={48} />
                     <h3 className="text-xl font-bold text-gray-700 mb-2">Nenhuma Assinatura Ativa</h3>
                     <p className="text-gray-500">Escolha um plano abaixo para começar.</p>
@@ -235,7 +235,7 @@ export const TenantSubscriptionPanel: React.FC<TenantSubscriptionPanelProps> = (
                         return (
                             <div
                                 key={plan.id}
-                                className={`rounded-3xl p-6 border-2 transition-all ${isCurrentPlan
+                                className={`rounded-2xl p-6 border-2 transition-all ${isCurrentPlan
                                     ? 'bg-violet-50 border-violet-600 shadow-lg'
                                     : isPremium
                                         ? 'bg-gradient-to-br from-slate-900 to-violet-900 text-white border-violet-600 shadow-xl'

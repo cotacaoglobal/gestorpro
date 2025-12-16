@@ -98,22 +98,22 @@ export const ManageCategories: React.FC<ManageCategoriesProps> = ({ user }) => {
     };
 
     return (
-        <div className="p-6 md:p-8 max-w-5xl mx-auto">
-            <div className="mb-8">
-                <div className="flex items-center justify-between">
+        <div className="p-2.5 md:p-8 max-w-5xl mx-auto">
+            <div className="mb-6 md:mb-8">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center">
-                            <Folder size={24} />
+                        <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center">
+                            <Folder size={20} className="md:w-6 md:h-6" />
                         </div>
                         <div>
-                            <h2 className="text-3xl font-extrabold text-slate-800">Gerenciar Categorias</h2>
-                            <p className="text-slate-500 font-medium">Organize seus produtos em categorias personalizadas</p>
+                            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800">Categorias</h2>
+                            <p className="text-xs md:text-base text-slate-500 font-medium">Organize seus produtos</p>
                         </div>
                     </div>
 
                     <button
                         onClick={() => setAdding(true)}
-                        className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-2xl font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-200"
+                        className="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-200"
                     >
                         <Plus size={20} />
                         Nova Categoria

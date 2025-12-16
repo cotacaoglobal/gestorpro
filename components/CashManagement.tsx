@@ -97,7 +97,7 @@ export const CashManagement: React.FC<CashManagementProps> = ({ user }) => {
     const totalSalesActive = 0; // Placeholder until we have a performant way to sum all sales of all active sessions without 10 requests.
 
     return (
-        <div className="p-6 md:p-8 max-w-[1600px] mx-auto space-y-8">
+        <div className="p-2.5 md:p-8 max-w-[1600px] mx-auto space-y-8">
             {/* Header */}
             <div>
                 <h1 className="text-4xl font-extrabold tracking-tight text-slate-800">
@@ -226,7 +226,7 @@ export const CashManagement: React.FC<CashManagementProps> = ({ user }) => {
                             const isOpen = status === 'OPEN' || status === 'open';
 
                             return (
-                                <div key={session.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg hover:border-violet-100 transition-all group">
+                                <div key={session.id} className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg hover:border-violet-100 transition-all group">
                                     <div className="flex justify-between items-start mb-4">
                                         <div className="flex items-center gap-3">
                                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${isOpen ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>

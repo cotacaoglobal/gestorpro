@@ -111,7 +111,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ sales, products, onViewLow
 
   const StatCard = ({ title, value, icon: Icon, color, subValue, onClick, actionLabel }: any) => (
     <div
-      className={`bg-white p-6 rounded-[2rem] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ${onClick ? 'cursor-pointer group' : ''}`}
+      className={`bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ${onClick ? 'cursor-pointer group' : ''}`}
       onClick={onClick}
     >
       <div className="flex justify-between items-start mb-4">
@@ -146,7 +146,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ sales, products, onViewLow
   const avgTicket = todaySales.length > 0 ? todayTotal / todaySales.length : 0;
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6 md:space-y-8">
+    <div className="p-2.5 max-w-[1600px] mx-auto space-y-4">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-3 md:gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold text-slate-800 tracking-tight">Dashboard</h1>
@@ -157,7 +157,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ sales, products, onViewLow
       </div>
 
       {/* Real-time Indicators */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Vendas Hoje"
           value={`R$ ${todayTotal.toFixed(2)}`}
@@ -191,7 +191,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ sales, products, onViewLow
       </div>
 
       {/* Original Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Faturamento Total"
           value={`R$ ${totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
@@ -222,10 +222,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ sales, products, onViewLow
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Sales Chart */}
-        <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-sm">
-          <div className="flex justify-between items-center mb-6 md:mb-8">
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm">
+          <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg md:text-xl font-bold text-slate-800">Vendas Recentes</h3>
             <button className="text-violet-600 font-semibold text-xs md:text-sm hover:bg-violet-50 px-3 py-1 rounded-xl transition-colors">Ver Detalhes</button>
           </div>
@@ -295,7 +295,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ sales, products, onViewLow
       </div>
 
       {/* Employee Table */}
-      <div className="bg-white rounded-[2.5rem] shadow-sm overflow-hidden p-2">
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden p-2">
         <div className="p-6 pb-2 flex items-center justify-between">
           <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3">
             <div className="p-2 bg-violet-100 text-violet-600 rounded-xl">

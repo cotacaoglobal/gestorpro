@@ -112,7 +112,7 @@ export const BackupData: React.FC<BackupDataProps> = ({ user }) => {
     };
 
     return (
-        <div className="p-6 md:p-8 max-w-4xl mx-auto">
+        <div className="p-2.5 md:p-8 max-w-4xl mx-auto">
             <div className="mb-8">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center">
@@ -141,7 +141,7 @@ export const BackupData: React.FC<BackupDataProps> = ({ user }) => {
             {/* Cards de Ação */}
             <div className="grid md:grid-cols-2 gap-6">
                 {/* Exportar Dados */}
-                <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-8">
+                <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6 md:p-8">
                     <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
                         <Download size={32} />
                     </div>
@@ -190,7 +190,7 @@ export const BackupData: React.FC<BackupDataProps> = ({ user }) => {
                 </div>
 
                 {/* Importar Dados */}
-                <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-8">
+                <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6 md:p-8">
                     <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mb-6">
                         <Upload size={32} />
                     </div>
