@@ -176,7 +176,7 @@ describe('Validation Schemas', () => {
             const result = validateSafe(SaleSchema, invalidSale);
             expect(result.success).toBe(false);
             if (!result.success) {
-                expect(result.errors.some(e => e.includes('não corresponde'))).toBe(true);
+                expect(result.errors.some(e => e.includes('Total da venda'))).toBe(true);
             }
         });
 

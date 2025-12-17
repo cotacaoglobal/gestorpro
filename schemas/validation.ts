@@ -245,6 +245,8 @@ export function validateSafe<T>(
   }
   return {
     success: false,
-    errors: result.error?.errors?.map(e => `${e.path.join('.')}: ${e.message}`) || ['Erro de validação desconhecido']
+    errors: (result.error as any)?.issues?.map((e: any) => `${e.path.join('.')}: ${e.message}`)
+      || (result.error as any)?.errors?.map((e: any) => `${e.path.join('.')}: ${e.message}`)
+      || ['Erro de validação desconhecido']
   };
 }

@@ -23,11 +23,11 @@ INSERT INTO users (id, tenant_id, name, email, role, password_hash) VALUES
 ON CONFLICT (id) DO UPDATE SET tenant_id = EXCLUDED.tenant_id;
 
 -- 3. CRIAR PRODUTOS DE TESTE
-INSERT INTO products (id, tenant_id, name, category, price_sell, price_cost, stock, min_stock) VALUES
-  ('aaaaaaaa-0001-0001-0001-000000000001', '11111111-1111-1111-1111-111111111111', 'Produto A1', 'Categoria A', 10.00, 5.00, 100, 10),
-  ('aaaaaaaa-0002-0002-0002-000000000002', '11111111-1111-1111-1111-111111111111', 'Produto A2', 'Categoria A', 20.00, 10.00, 50, 5),
-  ('bbbbbbbb-0001-0001-0001-000000000001', '22222222-2222-2222-2222-222222222222', 'Produto B1', 'Categoria B', 15.00, 7.50, 75, 8),
-  ('bbbbbbbb-0002-0002-0002-000000000002', '22222222-2222-2222-2222-222222222222', 'Produto B2', 'Categoria B', 25.00, 12.50, 30, 3)
+INSERT INTO products (id, tenant_id, name, category, price_sell, price_cost, stock, min_stock, internal_code, barcode) VALUES
+  ('aaaaaaaa-0001-0001-0001-000000000001', '11111111-1111-1111-1111-111111111111', 'Produto A1', 'Categoria A', 10.00, 5.00, 100, 10, 'CODE-A1', 'BAR-A1'),
+  ('aaaaaaaa-0002-0002-0002-000000000002', '11111111-1111-1111-1111-111111111111', 'Produto A2', 'Categoria A', 20.00, 10.00, 50, 5, 'CODE-A2', 'BAR-A2'),
+  ('bbbbbbbb-0001-0001-0001-000000000001', '22222222-2222-2222-2222-222222222222', 'Produto B1', 'Categoria B', 15.00, 7.50, 75, 8, 'CODE-B1', 'BAR-B1'),
+  ('bbbbbbbb-0002-0002-0002-000000000002', '22222222-2222-2222-2222-222222222222', 'Produto B2', 'Categoria B', 25.00, 12.50, 30, 3, 'CODE-B2', 'BAR-B2')
 ON CONFLICT (id) DO NOTHING;
 
 -- ==============================================================================

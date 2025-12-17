@@ -1,0 +1,13 @@
+Starting debug test...
+Sale Validation Result: {
+  "success": false,
+  "errors": [
+    "Erro de validação desconhecido"
+  ]
+}
+Product Validation Result: {
+  "success": false,
+  "errors": [
+    "Erro de validação desconhecido"
+  ]
+}

@@ -1,73 +1,72 @@
--- ========================================
--- FIX: Remover recursão infinita nas políticas RLS
--- ========================================
+-- ==============================================================================
+-- CORREÇÃO DEFINITIVA: ERRO DE RECURSÃO INFINITA (42P17)
+-- ==============================================================================
+-- O erro ocorre porque a política de segurança da tabela 'users' tenta ler
+-- a própria tabela 'users' para verificar permissões, criando um loop infinito.
+--
+-- SOLUÇÃO: Criar funções de segurança (Security Definer) que bypassam o RLS
+-- apenas para verificar as credenciais, quebrando o loop.
+-- ==============================================================================
 
--- PASSO 1: Remover TODAS as políticas da tabela users
-DROP POLICY IF EXISTS "users_select_policy" ON users;
-DROP POLICY IF EXISTS "users_insert_policy" ON users;
-DROP POLICY IF EXISTS "users_update_policy" ON users;
-DROP POLICY IF EXISTS "users_delete_policy" ON users;
-DROP POLICY IF EXISTS "Enable read access for authenticated users" ON users;
-DROP POLICY IF EXISTS "Enable insert for authenticated users" ON users;
-DROP POLICY IF EXISTS "Enable update for users based on id" ON users;
-DROP POLICY IF EXISTS "Enable delete for users based on id" ON users;
+-- 1. Helper seguro para buscar dados do usuário atual (sem causar recursão)
+-- SECURITY DEFINER: Executa com permissão de superusuário, ignorando RLS
+CREATE OR REPLACE FUNCTION get_my_auth_data()
+RETURNS TABLE (tenant_id UUID, role TEXT)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT tenant_id, role FROM users WHERE id = auth.uid();
+$$;
 
--- PASSO 2: Criar políticas SIMPLES sem recursão
+-- 2. Remover TODAS as políticas de leitura problemáticas anteriores
+DROP POLICY IF EXISTS "users_select_same_tenant" ON users;
+DROP POLICY IF EXISTS "users_read_own_profile" ON users;
+DROP POLICY IF EXISTS "Enable all for anon" ON users;
+-- Políticas criadas no passo anterior (nomes podem variar)
+DROP POLICY IF EXISTS "users_select_same_tenant_v2" ON users;
 
--- SELECT: Usuários podem ver outros usuários do mesmo tenant
-CREATE POLICY "users_select_simple" ON users
+-- 3. Criar NOVA política de LEITURA (SELECT) à prova de recursão
+CREATE POLICY "users_read_clean_policy" ON users
 FOR SELECT
 USING (
-  auth.uid() = id  -- Pode ver a si mesmo
-  OR
-  tenant_id IN (  -- Ou usuários do mesmo tenant
-    SELECT tenant_id FROM users WHERE id = auth.uid()
-  )
+    -- Regra 1: Usuário SEMPRE pode ler seus próprios dados (evita loop na raiz)
+    id = auth.uid()
+    OR
+    -- Regra 2: Usuário pode ler outros do MESMO tenant (usando função segura)
+    tenant_id = (SELECT tenant_id FROM get_my_auth_data())
+    OR
+    -- Regra 3: Super Admin pode ler tudo (usando função segura)
+    (SELECT role FROM get_my_auth_data()) = 'super_admin'
 );
 
--- INSERT: Apenas super_admin pode criar usuários
-CREATE POLICY "users_insert_simple" ON users
-FOR INSERT
-WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM users 
-    WHERE id = auth.uid() 
-    AND role = 'super_admin'
-  )
-  OR
-  auth.uid() = id  -- Permite criar o próprio registro (signup)
-);
-
--- UPDATE: Usuários podem atualizar a si mesmos, admins podem atualizar do mesmo tenant
-CREATE POLICY "users_update_simple" ON users
+-- 4. Atualizar política de UPDATE para usar a função segura
+DROP POLICY IF EXISTS "users_update_self_only" ON users;
+CREATE POLICY "users_update_safe_policy" ON users
 FOR UPDATE
-USING (
-  auth.uid() = id  -- Pode atualizar a si mesmo
-  OR
-  EXISTS (
-    SELECT 1 FROM users 
-    WHERE id = auth.uid() 
-    AND role IN ('admin', 'super_admin')
-    AND tenant_id = users.tenant_id
-  )
+USING (id = auth.uid())
+WITH CHECK (
+  id = auth.uid()
+  -- Garante consistência usando a função segura
+  AND tenant_id = (SELECT tenant_id FROM get_my_auth_data())
+  AND role = (SELECT role FROM get_my_auth_data())
 );
 
--- DELETE: Apenas admins podem deletar usuários do mesmo tenant
-CREATE POLICY "users_delete_simple" ON users
+-- 5. Atualizar política de DELETE para usar a função segura
+DROP POLICY IF EXISTS "users_delete_admin_only" ON users;
+CREATE POLICY "users_delete_safe_policy" ON users
 FOR DELETE
 USING (
-  EXISTS (
-    SELECT 1 FROM users 
-    WHERE id = auth.uid() 
-    AND role IN ('admin', 'super_admin')
-    AND tenant_id = users.tenant_id
-  )
+  (SELECT role FROM get_my_auth_data()) = 'admin'
+  AND tenant_id = (SELECT tenant_id FROM get_my_auth_data())
+  AND id != auth.uid()
 );
 
--- ========================================
--- VERIFICAÇÃO
--- ========================================
--- Execute para verificar as políticas:
-SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual, with_check
-FROM pg_policies
-WHERE tablename = 'users';
+-- 6. Atualizar política de INSERT
+DROP POLICY IF EXISTS "users_insert_admin_only" ON users;
+CREATE POLICY "users_insert_safe_policy" ON users
+FOR INSERT
+WITH CHECK (
+  (SELECT role FROM get_my_auth_data()) = 'admin'
+  AND tenant_id = (SELECT tenant_id FROM get_my_auth_data())
+);

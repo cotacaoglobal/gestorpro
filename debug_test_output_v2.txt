@@ -1,0 +1,5 @@
+Raw Sale SafeParse Result:
+{
+  "name": "ZodError",
+  "message": "[\n  {\n    \"code\": \"custom\",\n    \"path\": [\n      \"total\"\n    ],\n    \"message\": \"Total da venda não corresponde à soma dos itens\"\n  }\n]"
+}
