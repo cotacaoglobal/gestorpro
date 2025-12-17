@@ -225,7 +225,7 @@ export function validateOrThrow<T>(schema: z.ZodSchema<T>, data: unknown): T {
     return schema.parse(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const messages = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('\n');
+      const messages = error.errors?.map(e => `${e.path.join('.')}: ${e.message}`)?.join('\n') || 'Erro de validação';
       throw new Error(`Validação falhou:\n${messages}`);
     }
     throw error;
@@ -245,6 +245,6 @@ export function validateSafe<T>(
   }
   return {
     success: false,
-    errors: result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+    errors: result.error?.errors?.map(e => `${e.path.join('.')}: ${e.message}`) || ['Erro de validação desconhecido']
   };
 }
