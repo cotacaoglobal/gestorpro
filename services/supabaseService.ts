@@ -661,29 +661,13 @@ export const SupabaseService = {
             .replace(/^-+|-+$/g, '');
 
         try {
-            // 1. Create Tenant (public table) - needs to happen first or via RPC? 
-            // Better to use the RPC if it works, BUT RPC 'register_tenant' was for custom users.
-            // We need a NEW registration flow that uses Supabase Auth.
-
-            // NOTE: Standard flow is: 
-            // 1. User Sign Up -> auth.users
-            // 2. Trigger -> public.users
-            // 3. User creates Tenant? 
-
-            // To simplify, we will stick with `register_tenant` RPC but we need to update it 
-            // OR use a client-side multi-step process.
-            // Given the existing RPC does custom user insert, we SHOULD use client-side sign up.
-
-            // Step 1: Sign up user
+            // Step 1: Sign up user with Supabase Auth
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: ownerEmail,
                 password: ownerPassword,
                 options: {
                     data: {
                         name: ownerName,
-                        role: 'admin', // Owner is admin
-                        // we don't have tenantId yet, it will be null initially? 
-                        // Or we need to create tenant first?
                     }
                 }
             });
@@ -703,19 +687,40 @@ export const SupabaseService = {
                 .select()
                 .single();
 
-            if (tenantError) return { success: false, error: tenantError.message };
+            if (tenantError) {
+                // Rollback: delete auth user if tenant creation fails
+                await supabase.auth.admin.deleteUser(authData.user.id);
+                return { success: false, error: tenantError.message };
+            }
 
-            // Step 3: Update user with tenantId
-            // The trigger might have already run. We update the profile.
-            const { error: updateError } = await supabase
+            // Step 3: Manually insert into public.users (don't rely on trigger)
+            const { error: userInsertError } = await supabase
                 .from('users')
-                .update({
+                .insert({
+                    id: authData.user.id,
+                    email: ownerEmail,
+                    name: ownerName,
                     tenant_id: tenantData.id,
-                    role: 'admin'
-                })
-                .eq('id', authData.user.id);
+                    role: 'admin',
+                    password_hash: 'MANAGED_BY_SUPABASE_AUTH'
+                });
 
-            if (updateError) return { success: false, error: updateError.message };
+            if (userInsertError) {
+                // If user already exists (trigger created it), just update
+                const { error: updateError } = await supabase
+                    .from('users')
+                    .update({
+                        tenant_id: tenantData.id,
+                        role: 'admin',
+                        name: ownerName
+                    })
+                    .eq('id', authData.user.id);
+
+                if (updateError) {
+                    console.error('Failed to update user:', updateError);
+                    return { success: false, error: 'Failed to link user to tenant' };
+                }
+            }
 
             return { success: true };
 
