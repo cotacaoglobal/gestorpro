@@ -404,7 +404,7 @@ export const SupabaseService = {
         if (profile.tenant_id && profile.role !== 'super_admin') {
             const { data: tenant } = await supabase
                 .from('tenants')
-                .select('status')
+                .select('status, created_at')
                 .eq('id', profile.tenant_id)
                 .single();
 
@@ -415,55 +415,61 @@ export const SupabaseService = {
                 return null;
             }
 
-            // Verificar se a assinatura está válida
-            const { data: subscription } = await supabase
-                .from('subscriptions')
-                .select('status, trial_ends_at, expires_at')
-                .eq('tenant_id', profile.tenant_id)
-                .single();
+            // Grace period: Allow new tenants (< 24h) without subscription
+            const tenantCreatedAt = tenant?.created_at ? new Date(tenant.created_at) : null;
+            const isNewTenant = tenantCreatedAt && (Date.now() - tenantCreatedAt.getTime()) < 24 * 60 * 60 * 1000;
 
-            if (subscription) {
-                const now = new Date();
-                let subscriptionInvalid = false;
-                let reason = '';
+            if (!isNewTenant) {
+                // Verificar se a assinatura está válida (apenas para tenants antigos)
+                const { data: subscription } = await supabase
+                    .from('subscriptions')
+                    .select('status, trial_ends_at, expires_at')
+                    .eq('tenant_id', profile.tenant_id)
+                    .single();
 
-                // Verificar se está cancelada ou expirada
-                if (subscription.status === 'cancelled') {
-                    subscriptionInvalid = true;
-                    reason = 'Sua assinatura foi cancelada. Renove para continuar usando o sistema.';
-                } else if (subscription.status === 'expired') {
-                    subscriptionInvalid = true;
-                    reason = 'Sua assinatura expirou. Renove para continuar usando o sistema.';
-                }
-                // Verificar se trial expirou
-                else if (subscription.status === 'trial' && subscription.trial_ends_at) {
-                    const trialEnd = new Date(subscription.trial_ends_at);
-                    if (trialEnd < now) {
+                if (subscription) {
+                    const now = new Date();
+                    let subscriptionInvalid = false;
+                    let reason = '';
+
+                    // Verificar se está cancelada ou expirada
+                    if (subscription.status === 'cancelled') {
                         subscriptionInvalid = true;
-                        reason = 'Seu período de teste expirou. Assine um plano para continuar.';
-                    }
-                }
-                // Verificar se assinatura ativa expirou
-                else if (subscription.status === 'active' && subscription.expires_at) {
-                    const expireDate = new Date(subscription.expires_at);
-                    if (expireDate < now) {
+                        reason = 'Sua assinatura foi cancelada. Renove para continuar usando o sistema.';
+                    } else if (subscription.status === 'expired') {
                         subscriptionInvalid = true;
                         reason = 'Sua assinatura expirou. Renove para continuar usando o sistema.';
                     }
-                }
+                    // Verificar se trial expirou
+                    else if (subscription.status === 'trial' && subscription.trial_ends_at) {
+                        const trialEnd = new Date(subscription.trial_ends_at);
+                        if (trialEnd < now) {
+                            subscriptionInvalid = true;
+                            reason = 'Seu período de teste expirou. Assine um plano para continuar.';
+                        }
+                    }
+                    // Verificar se assinatura ativa expirou
+                    else if (subscription.status === 'active' && subscription.expires_at) {
+                        const expireDate = new Date(subscription.expires_at);
+                        if (expireDate < now) {
+                            subscriptionInvalid = true;
+                            reason = 'Sua assinatura expirou. Renove para continuar usando o sistema.';
+                        }
+                    }
 
-                if (subscriptionInvalid) {
-                    console.error(`🚨 ${reason}`);
-                    localStorage.setItem('logout_reason', reason);
+                    if (subscriptionInvalid) {
+                        console.error(`🚨 ${reason}`);
+                        localStorage.setItem('logout_reason', reason);
+                        await SupabaseService.logout();
+                        return null;
+                    }
+                } else {
+                    // Se não tem assinatura e não é novo, bloqueia
+                    console.error('🚨 Nenhuma assinatura encontrada. Bloqueando acesso.');
+                    localStorage.setItem('logout_reason', 'Nenhuma assinatura ativa encontrada. Entre em contato com o suporte.');
                     await SupabaseService.logout();
                     return null;
                 }
-            } else {
-                // Se não tem assinatura, bloqueia também
-                console.error('🚨 Nenhuma assinatura encontrada. Bloqueando acesso.');
-                localStorage.setItem('logout_reason', 'Nenhuma assinatura ativa encontrada. Entre em contato com o suporte.');
-                await SupabaseService.logout();
-                return null;
             }
         }
 
