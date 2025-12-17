@@ -151,8 +151,8 @@ const App: React.FC = () => {
 
   const handleLogin = (loggedInUser: User) => {
     setUser(loggedInUser);
-    // Save user to localStorage for session persistence
-    localStorage.setItem('gestorpro_user', JSON.stringify(loggedInUser));
+    // ✅ Session gerenciada automaticamente pelo Supabase (httpOnly cookies)
+    // Não armazenar dados sensíveis em localStorage
 
     if (loggedInUser.role === 'super_admin') {
       setView('ADMIN_DASHBOARD');
@@ -170,7 +170,7 @@ const App: React.FC = () => {
     setUser(null);
     setView('LOGIN');
     setActiveSessionId(undefined);
-    localStorage.removeItem('gestorpro_user');
+    // ✅ Session limpa automaticamente pelo Supabase
     navigate('/login');
   };
 
@@ -195,8 +195,10 @@ const App: React.FC = () => {
   };
 
   const handleProductDelete = async (productId: string) => {
+    if (!user?.tenantId) return;
+
     try {
-      await SupabaseService.deleteProduct(productId);
+      await SupabaseService.deleteProduct(productId, user.tenantId);
       await loadData();
     } catch (error) {
       console.error('Error deleting product:', error);
@@ -258,8 +260,7 @@ const App: React.FC = () => {
     try {
       await SupabaseService.updateUser(updatedUser);
       setUser(updatedUser);
-      // Update localStorage with new user data
-      localStorage.setItem('gestorpro_user', JSON.stringify(updatedUser));
+      // ✅ Dados atualizados apenas no estado React, não em localStorage
     } catch (error) {
       console.error('Error updating profile:', error);
     }

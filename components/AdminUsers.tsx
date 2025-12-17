@@ -40,17 +40,17 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({ user }) => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Remover usuário?')) {
-      try {
-        await SupabaseService.deleteUser(id);
-        setUsers(users.filter(u => u.id !== id));
-        alert('Usuário removido com sucesso!');
-      } catch (error: any) {
-        console.error('Error deleting user:', error);
-        const errorMessage = error.message || 'Erro ao remover usuário';
-        alert(errorMessage);
-      }
+  const handleDeleteUser = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
+    if (!user?.tenantId) return;
+
+    try {
+      await SupabaseService.deleteUser(id, user.tenantId);
+      setUsers(users.filter(u => u.id !== id));
+      alert('Usuário removido com sucesso!');
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Erro ao excluir usuário.');
     }
   };
 
@@ -108,7 +108,7 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({ user }) => {
                   <button onClick={() => toggleRole(user)} className="text-xs text-blue-600 hover:underline whitespace-nowrap">
                     Trocar Função
                   </button>
-                  <button onClick={() => handleDelete(user.id)} className="p-2 text-red-400 hover:text-red-600">
+                  <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-red-400 hover:text-red-600">
                     <Trash2 size={16} />
                   </button>
                 </div>

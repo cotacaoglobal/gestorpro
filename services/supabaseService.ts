@@ -106,14 +106,12 @@ export const SupabaseService = {
         };
     },
 
-    deleteProduct: async (productId: string): Promise<void> => {
+    deleteProduct: async (productId: string, tenantId: string): Promise<void> => {
         const { error } = await supabase
             .from('products')
             .delete()
-            .eq('id', productId);
-        // Note: For extra safety we should also check tenant_id, 
-        // but typically the ID is unique enough. 
-        // Adding tenant_id check requires passing it to this function.
+            .eq('id', productId)
+            .eq('tenant_id', tenantId); // ✅ Isolamento multi-tenant garantido
 
         if (error) throw error;
     },
@@ -226,13 +224,14 @@ export const SupabaseService = {
         }
     },
 
-    deleteSale: async (saleId: string): Promise<void> => {
+    deleteSale: async (saleId: string, tenantId: string): Promise<void> => {
         // Note: When deleting a sale, we should restore the stock.
         // First, get the sale details
         const { data: saleData, error: fetchError } = await supabase
             .from('sales')
             .select('*')
             .eq('id', saleId)
+            .eq('tenant_id', tenantId) // ✅ Isolamento multi-tenant garantido
             .single();
 
         if (fetchError) throw fetchError;
@@ -343,11 +342,12 @@ export const SupabaseService = {
         };
     },
 
-    deleteUser: async (userId: string): Promise<void> => {
+    deleteUser: async (userId: string, tenantId: string): Promise<void> => {
         const { error } = await supabase
             .from('users')
             .delete()
-            .eq('id', userId);
+            .eq('id', userId)
+            .eq('tenant_id', tenantId); // ✅ Isolamento multi-tenant garantido
 
         if (error) throw error;
     },
