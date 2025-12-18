@@ -823,7 +823,7 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
                   {getFavoriteProducts().map(product => (
                     <button
                       key={product.id}
-                      onClick={() => addToCart(product)}
+                      onClick={() => openQuantityModal(product)}
                       className="p-2 md:p-3 rounded-lg md:rounded-xl transition-all border bg-violet-50 hover:bg-violet-100 border-violet-100"
                     >
                       <div className="aspect-square mb-1 md:mb-2 bg-slate-100 rounded-md md:rounded-lg overflow-hidden">
@@ -884,7 +884,7 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
               return (
                 <button
                   key={product.id}
-                  onClick={() => addToCart(product)}
+                  onClick={() => openQuantityModal(product)}
                   disabled={product.stock <= 0}
                   className={`group relative bg-white rounded-xl md:rounded-2xl p-2 md:p-3 lg:p-4 border border-slate-100 transition-all duration-300 flex flex-col ${product.stock <= 0
                     ? 'opacity-50 cursor-not-allowed'
