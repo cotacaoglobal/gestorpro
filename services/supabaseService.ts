@@ -736,6 +736,29 @@ export const SupabaseService = {
         }
     },
 
+    getTenant: async (tenantId: string): Promise<Tenant | null> => {
+        const { data, error } = await supabase
+            .from('tenants')
+            .select('*')
+            .eq('id', tenantId)
+            .single();
+
+        if (error) {
+            console.error('Error fetching tenant:', error);
+            return null;
+        }
+
+        return {
+            id: data.id,
+            name: data.name,
+            slug: data.slug,
+            plan: data.plan || 'free',
+            status: data.status || 'active',
+            createdAt: data.created_at,
+            emailNotificationsEnabled: !!data.email_notifications_enabled
+        };
+    },
+
     // --- SaaS Admin ---
     getTenants: async (): Promise<Tenant[]> => {
         // Query to get tenants with their owner info
@@ -769,6 +792,7 @@ export const SupabaseService = {
                 createdAt: t.created_at,
                 ownerName: owner?.name,
                 ownerEmail: owner?.email,
+                emailNotificationsEnabled: !!t.email_notifications_enabled,
             };
         }));
 
@@ -779,6 +803,15 @@ export const SupabaseService = {
         const { error } = await supabase
             .from('tenants')
             .update({ status })
+            .eq('id', tenantId);
+
+        if (error) throw error;
+    },
+
+    updateTenantSettings: async (tenantId: string, settings: { email_notifications_enabled?: boolean }): Promise<void> => {
+        const { error } = await supabase
+            .from('tenants')
+            .update(settings)
             .eq('id', tenantId);
 
         if (error) throw error;
@@ -1213,6 +1246,10 @@ export const SupabaseService = {
             mpPaymentType: t.mp_payment_type,
             mpPaymentMethod: t.mp_payment_method,
             description: t.description,
+            paymentLink: t.payment_link,
+            pixQrCode: t.pix_qr_code,
+            pixQrCodeBase64: t.pix_qr_code_base64,
+            pixExpiration: t.pix_expiration,
             createdAt: t.created_at,
             paidAt: t.paid_at,
             expiresAt: t.expires_at,

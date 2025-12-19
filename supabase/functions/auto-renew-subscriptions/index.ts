@@ -155,10 +155,48 @@ serve(async (req) => {
                     continue
                 }
 
-                // TODO: Enviar email ao cliente com link de pagamento
-                // Por enquanto, apenas logamos
-                console.log(`✅ Cobrança criada com sucesso para ${sub.tenants.name}`)
-                console.log(`   Link de pagamento: ${mpData.init_point}`)
+                // Enviar email ao cliente com link de pagamento
+                try {
+                    console.log(`📧 Enviando email de cobrança para ${sub.tenants.owner_email}...`)
+                    const emailBody = `
+                        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                            <h1 style="color: #7c3aed; text-align: center;">Lembrete de Renovação</h1>
+                            <p>Olá <strong>${sub.tenants.name}</strong>,</p>
+                            <p>Sua assinatura do plano <strong>${sub.saas_plans.name}</strong> está próxima do vencimento (${new Date(sub.expires_at).toLocaleDateString('pt-BR')}).</p>
+                            <div style="background-color: #f8fafc; padding: 15px; border-radius: 6px; margin: 20px 0;">
+                                <p style="margin: 5px 0;"><strong>Valor:</strong> R$ ${parseFloat(sub.saas_plans.price).toFixed(2)}</p>
+                                <p style="margin: 5px 0;"><strong>Vencimento:</strong> ${new Date(sub.expires_at).toLocaleDateString('pt-BR')}</p>
+                            </div>
+                            <p>Para manter seu acesso sem interrupções, clique no botão abaixo para realizar o pagamento:</p>
+                            <p style="text-align: center; margin: 30px 0;">
+                                <a href="${mpData.init_point}" style="background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Pagar Agora</a>
+                            </p>
+                            <p style="font-size: 14px; color: #64748b;">Se o botão não funcionar, copie e cole este link no seu navegador: ${mpData.init_point}</p>
+                            <p style="margin-top: 20px;">Se você já efetuou o pagamento, por favor desconsidere este email.</p>
+                            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+                            <p style="font-size: 12px; color: #64748b; text-align: center;">
+                                Gestor Pro - Sistema de Gestão Inteligente<br>
+                                Este é um email automático de cobrança.
+                            </p>
+                        </div>
+                    `
+
+                    await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            to: sub.tenants.owner_email,
+                            subject: 'Sua assinatura Gestor Pro está vencendo',
+                            html: emailBody
+                        })
+                    })
+                    console.log(`✅ Email de cobrança enviado!`)
+                } catch (emailErr) {
+                    console.error('⚠️ Falha ao enviar email de cobrança:', emailErr)
+                }
 
                 results.push({
                     subscriptionId: sub.id,

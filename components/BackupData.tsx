@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Upload, Database, Calendar, Check, AlertCircle, FileText } from 'lucide-react';
+import { Download, Upload, Database, Calendar, Check, AlertCircle, FileText, FileSpreadsheet, File } from 'lucide-react';
 import { SupabaseService } from '../services/supabaseService';
-import { User } from '../types';
+import { User, Product, Sale } from '../types';
+import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 
 interface BackupDataProps {
     user: User;
@@ -9,13 +12,26 @@ interface BackupDataProps {
 
 export const BackupData: React.FC<BackupDataProps> = ({ user }) => {
     const [exporting, setExporting] = useState(false);
+    const [exportingExcel, setExportingExcel] = useState(false);
+    const [exportingPDF, setExportingPDF] = useState(false);
     const [importing, setImporting] = useState(false);
     const [lastBackup, setLastBackup] = useState<string | null>(null);
+    const [storeName, setStoreName] = useState('Gestor Pro');
 
     useEffect(() => {
         const saved = localStorage.getItem('last_backup_date');
         if (saved) setLastBackup(saved);
+        loadTenantInfo();
     }, []);
+
+    const loadTenantInfo = async () => {
+        try {
+            const tenant = await SupabaseService.getTenant(user.tenantId);
+            if (tenant) setStoreName(tenant.name);
+        } catch (error) {
+            console.error('Erro ao carregar info da loja:', error);
+        }
+    };
 
     const handleExportData = async () => {
         try {
@@ -30,9 +46,10 @@ export const BackupData: React.FC<BackupDataProps> = ({ user }) => {
             ]);
 
             const backupData = {
-                version: '1.0',
+                version: '1.2',
                 timestamp: new Date().toISOString(),
                 tenantId: user.tenantId,
+                storeName: storeName,
                 data: {
                     products,
                     sales,
@@ -54,17 +71,133 @@ export const BackupData: React.FC<BackupDataProps> = ({ user }) => {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
 
-            // Salva data do último backup
-            const now = new Date().toISOString();
-            localStorage.setItem('last_backup_date', now);
-            setLastBackup(now);
-
-            alert('✅ Backup exportado com sucesso!');
+            updateLastBackupDate();
+            alert('✅ Backup JSON exportado com sucesso!');
         } catch (error) {
             console.error('Erro ao exportar backup:', error);
             alert('❌ Erro ao exportar backup. Tente novamente.');
         } finally {
             setExporting(false);
+        }
+    };
+
+    const updateLastBackupDate = () => {
+        const now = new Date().toISOString();
+        localStorage.setItem('last_backup_date', now);
+        setLastBackup(now);
+    };
+
+    const handleExportExcel = async () => {
+        try {
+            setExportingExcel(true);
+            const [products, sales, users] = await Promise.all([
+                SupabaseService.getProducts(user.tenantId),
+                SupabaseService.getSales(user.tenantId),
+                SupabaseService.getUsers(user.tenantId),
+            ]);
+
+            const wb = XLSX.utils.book_new();
+
+            // Aba Produtos
+            const productsSheet = products.map(p => ({
+                'Nome': p.name,
+                'Categoria': p.category,
+                'Cód. Interno': p.internalCode,
+                'Cód. Barras': p.barcode,
+                'Preço Venda': p.priceSell,
+                'Preço Custo': p.priceCost,
+                'Estoque': p.stock,
+                'Estoque Mínigo': p.minStock,
+                'Fornecedor': p.supplier
+            }));
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(productsSheet), 'Produtos');
+
+            // Aba Vendas
+            const salesSheet = sales.map(s => ({
+                'ID': s.id.substring(0, 8),
+                'Data': new Date(s.date).toLocaleString('pt-BR'),
+                'Cliente': s.customerName,
+                'Total': s.total,
+                'Itens': s.items.length,
+                'Pagamento': s.payments.map(p => `${p.method}: R$${p.amount}`).join(', ')
+            }));
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(salesSheet), 'Vendas');
+
+            // Aba Usuários
+            const usersSheet = users.map(u => ({
+                'Nome': u.name,
+                'Email': u.email,
+                'Cargo': u.role
+            }));
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(usersSheet), 'Usuários');
+
+            XLSX.writeFile(wb, `dados-${storeName.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.xlsx`);
+            updateLastBackupDate();
+            alert('✅ Planilha Excel gerada com sucesso!');
+        } catch (error) {
+            console.error('Erro ao exportar Excel:', error);
+            alert('❌ Erro ao exportar Excel.');
+        } finally {
+            setExportingExcel(false);
+        }
+    };
+
+    const handleExportPDF = async () => {
+        try {
+            setExportingPDF(true);
+            const [products, sales] = await Promise.all([
+                SupabaseService.getProducts(user.tenantId),
+                SupabaseService.getSales(user.tenantId),
+            ]);
+
+            const doc = new jsPDF();
+            const timestamp = new Date().toLocaleString('pt-BR');
+
+            // Header do PDF
+            doc.setFontSize(22);
+            doc.setTextColor(124, 58, 237); // Violet
+            doc.text(storeName, 14, 20);
+            doc.setFontSize(12);
+            doc.setTextColor(100, 116, 139);
+            doc.text(`Relatório Geral de Dados - Gerado em: ${timestamp}`, 14, 30);
+
+            // Tabela de Produtos
+            doc.setFontSize(16);
+            doc.setTextColor(30, 41, 59);
+            doc.text('Resumo de Estoque', 14, 45);
+
+            (doc as any).autoTable({
+                startY: 50,
+                head: [['Produto', 'Categoria', 'Preço', 'Estoque']],
+                body: products.map(p => [p.name, p.category, `R$ ${p.priceSell.toFixed(2)}`, p.stock]),
+                theme: 'striped',
+                headStyles: { fillStyle: [124, 58, 237] }
+            });
+
+            // Tabela de Vendas (próxima página ou abaixo se houver espaço)
+            const finalY = (doc as any).lastAutoTable.finalY + 15;
+            doc.text('Últimas Vendas', 14, finalY);
+
+            (doc as any).autoTable({
+                startY: finalY + 5,
+                head: [['Data', 'Cliente', 'Total']],
+                body: sales.slice(-20).map(s => [
+                    new Date(s.date).toLocaleDateString('pt-BR'),
+                    s.customerName,
+                    `R$ ${s.total.toFixed(2)}`
+                ]),
+                theme: 'striped',
+                headStyles: { fillStyle: [124, 58, 237] }
+            });
+
+            doc.save(`relatorio-${storeName.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`);
+            updateLastBackupDate();
+            alert('✅ Relatório PDF gerado com sucesso!');
+        } catch (error) {
+            console.error('Erro ao exportar PDF:', error);
+            alert('❌ Erro ao exportar PDF.');
+        } finally {
+            setExportingPDF(false);
         }
     };
 
@@ -140,90 +273,79 @@ export const BackupData: React.FC<BackupDataProps> = ({ user }) => {
 
             {/* Cards de Ação */}
             <div className="grid md:grid-cols-2 gap-6">
-                {/* Exportar Dados */}
-                <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6 md:p-8">
+                {/* Exportar para Excel */}
+                <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6 md:p-8 hover:shadow-xl transition-shadow">
+                    <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-6">
+                        <FileSpreadsheet size={32} />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-800 mb-2">Planilha Excel</h3>
+                    <p className="text-slate-500 mb-6 text-sm">
+                        Exporta produtos, vendas e usuários em abas separadas de um arquivo .xlsx.
+                    </p>
+                    <button
+                        onClick={handleExportExcel}
+                        disabled={exportingExcel}
+                        className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 flex items-center justify-center gap-2 disabled:bg-slate-300"
+                    >
+                        {exportingExcel ? <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" /> : <Download size={20} />}
+                        Exportar Excel
+                    </button>
+                </div>
+
+                {/* Exportar para PDF */}
+                <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6 md:p-8 hover:shadow-xl transition-shadow">
+                    <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mb-6">
+                        <File size={32} />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-800 mb-2">Relatório PDF</h3>
+                    <p className="text-slate-500 mb-6 text-sm">
+                        Gera um documento PDF com resumos de estoque e histórico de vendas recentes.
+                    </p>
+                    <button
+                        onClick={handleExportPDF}
+                        disabled={exportingPDF}
+                        className="w-full py-4 bg-rose-600 text-white rounded-2xl font-bold hover:bg-rose-700 transition-all shadow-lg shadow-rose-100 flex items-center justify-center gap-2 disabled:bg-slate-300"
+                    >
+                        {exportingPDF ? <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" /> : <Download size={20} />}
+                        Gerar PDF
+                    </button>
+                </div>
+
+                {/* Exportar JSON (Backup Técnico) */}
+                <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6 md:p-8 hover:shadow-xl transition-shadow">
                     <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
                         <Download size={32} />
                     </div>
 
-                    <h3 className="text-xl font-bold text-slate-800 mb-2">Exportar Dados</h3>
+                    <h3 className="text-xl font-bold text-slate-800 mb-2">Backup JSON</h3>
                     <p className="text-slate-500 mb-6 text-sm">
-                        Faça download de todos os seus dados (produtos, vendas, usuários) em formato JSON.
+                        Backup técnico completo para restauração do sistema em outra instância.
                     </p>
-
-                    <ul className="space-y-2 mb-6 text-sm">
-                        <li className="flex items-center gap-2 text-slate-600">
-                            <Check size={16} className="text-green-600" />
-                            Todos os produtos
-                        </li>
-                        <li className="flex items-center gap-2 text-slate-600">
-                            <Check size={16} className="text-green-600" />
-                            Histórico de vendas
-                        </li>
-                        <li className="flex items-center gap-2 text-slate-600">
-                            <Check size={16} className="text-green-600" />
-                            Usuários e sessões
-                        </li>
-                        <li className="flex items-center gap-2 text-slate-600">
-                            <Check size={16} className="text-green-600" />
-                            Configurações
-                        </li>
-                    </ul>
 
                     <button
                         onClick={handleExportData}
                         disabled={exporting}
-                        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2 disabled:bg-slate-300 disabled:cursor-not-allowed"
+                        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2 disabled:bg-slate-300"
                     >
-                        {exporting ? (
-                            <>
-                                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                                Exportando...
-                            </>
-                        ) : (
-                            <>
-                                <Download size={20} />
-                                Exportar Agora
-                            </>
-                        )}
+                        {exporting ? <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" /> : <Database size={20} />}
+                        Exportar JSON
                     </button>
                 </div>
 
                 {/* Importar Dados */}
-                <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6 md:p-8">
+                <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6 md:p-8 hover:shadow-xl transition-shadow">
                     <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mb-6">
                         <Upload size={32} />
                     </div>
 
-                    <h3 className="text-xl font-bold text-slate-800 mb-2">Importar Dados</h3>
+                    <h3 className="text-xl font-bold text-slate-800 mb-2">Importar JSON</h3>
                     <p className="text-slate-500 mb-6 text-sm">
                         Restaure um backup anterior. Esta ação substituirá os dados atuais.
                     </p>
 
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-                        <div className="flex gap-2">
-                            <AlertCircle size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
-                            <div>
-                                <div className="font-bold text-amber-800 text-xs uppercase mb-1">Atenção</div>
-                                <div className="text-amber-700 text-xs">
-                                    A importação substituirá todos os dados atuais. Faça um backup antes de prosseguir.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <label className={`w-full py-4 bg-amber-600 text-white rounded-2xl font-bold hover:bg-amber-700 transition-all shadow-lg shadow-amber-200 flex items-center justify-center gap-2 cursor-pointer ${importing ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                        {importing ? (
-                            <>
-                                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                                Importando...
-                            </>
-                        ) : (
-                            <>
-                                <Upload size={20} />
-                                Selecionar Backup
-                            </>
-                        )}
+                    <label className={`w-full py-4 bg-amber-600 text-white rounded-2xl font-bold hover:bg-amber-700 transition-all shadow-lg shadow-amber-100 flex items-center justify-center gap-2 cursor-pointer ${importing ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                        {importing ? <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" /> : <Upload size={20} />}
+                        Selecionar Backup
                         <input
                             type="file"
                             accept=".json"

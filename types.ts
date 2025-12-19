@@ -7,6 +7,7 @@ export interface Tenant {
   ownerName?: string; // Nome do responsável
   ownerEmail?: string; // Email do responsável
   createdAt?: string; // Data de criação
+  emailNotificationsEnabled?: boolean;
 }
 
 export interface SaasPlan {

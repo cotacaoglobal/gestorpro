@@ -64,6 +64,7 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
 
   // Real-time Indicators State
   const [todaySales, setTodaySales] = useState<Sale[]>([]);
+  const [storeName, setStoreName] = useState<string>('Gestor Pro');
   const [historyOpen, setHistoryOpen] = useState(false);
 
   // Clock State
@@ -149,6 +150,20 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
       return () => clearTimeout(timer);
     }
   }, [isOnline]);
+
+  // Load Tenant Info
+  useEffect(() => {
+    const loadTenant = async () => {
+      if (!user?.tenantId) return;
+      try {
+        const tenant = await SupabaseService.getTenant(user.tenantId);
+        if (tenant) setStoreName(tenant.name);
+      } catch (error) {
+        console.error('Error loading tenant info:', error);
+      }
+    };
+    loadTenant();
+  }, [user?.tenantId]);
 
   // Load today's sales for indicators
   useEffect(() => {
@@ -1388,6 +1403,7 @@ export const POS: React.FC<POSProps> = ({ products, sessionId, onSaleComplete, o
             sale={completedSale}
             onClose={handleNextClient}
             onNewClient={handleNextClient}
+            storeName={storeName}
           />
         )
       }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Crown, Calendar, CheckCircle2, AlertCircle, Zap, ArrowRight, Sparkles, CreditCard } from 'lucide-react';
+import { Crown, Calendar, CheckCircle2, AlertCircle, Zap, ArrowRight, Sparkles, CreditCard, FileText, ExternalLink, Copy, QrCode } from 'lucide-react';
 import { SupabaseService } from '../services/supabaseService';
 import { Subscription, SaasPlan, User, PaymentTransaction } from '../types';
 import { PaymentModal } from './PaymentModal';
@@ -15,6 +15,7 @@ export const TenantSubscriptionPanel: React.FC<TenantSubscriptionPanelProps> = (
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState<SaasPlan | null>(null);
     const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
+    const [selectedTxForPix, setSelectedTxForPix] = useState<PaymentTransaction | null>(null);
 
     useEffect(() => {
         loadData();
@@ -326,6 +327,141 @@ export const TenantSubscriptionPanel: React.FC<TenantSubscriptionPanelProps> = (
                         loadData();
                     }}
                 />
+            )}
+
+            {/* Invoice History / Digital Panel */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <FileText className="text-violet-600" size={24} />
+                            Minhas Faturas
+                        </h2>
+                        <p className="text-sm text-gray-500">Histórico de cobranças e pagamentos</p>
+                    </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                    {transactions.length > 0 ? (
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                                <tr>
+                                    <th className="px-6 py-4">Data</th>
+                                    <th className="px-6 py-4">Plano</th>
+                                    <th className="px-6 py-4">Valor</th>
+                                    <th className="px-6 py-4">Status</th>
+                                    <th className="px-6 py-4 text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {transactions.map((tx) => (
+                                    <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
+                                        <td className="px-6 py-4 font-medium text-gray-700">
+                                            {new Date(tx.createdAt).toLocaleDateString('pt-BR')}
+                                        </td>
+                                        <td className="px-6 py-4 text-gray-600">
+                                            {tx.planName}
+                                        </td>
+                                        <td className="px-6 py-4 font-bold text-gray-900">
+                                            R$ {tx.amount.toFixed(2)}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${tx.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                                                tx.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                                                    'bg-red-100 text-red-700'
+                                                }`}>
+                                                {tx.status === 'approved' ? 'PAGO' :
+                                                    tx.status === 'pending' ? 'PENDENTE' :
+                                                        tx.status.toUpperCase()}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                {tx.status === 'pending' && tx.paymentLink && (
+                                                    <a
+                                                        href={tx.paymentLink}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="p-2 text-violet-600 hover:bg-violet-50 rounded-lg transition-colors flex items-center gap-1 font-bold text-xs"
+                                                        title="Pagar Agora"
+                                                    >
+                                                        <ExternalLink size={16} />
+                                                        Pagar
+                                                    </a>
+                                                )}
+                                                {tx.status === 'pending' && tx.pixQrCode && (
+                                                    <button
+                                                        onClick={() => setSelectedTxForPix(tx)}
+                                                        className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors flex items-center gap-1 font-bold text-xs"
+                                                        title="Ver QR Code PIX"
+                                                    >
+                                                        <QrCode size={16} />
+                                                        PIX
+                                                    </button>
+                                                )}
+                                                {tx.status === 'approved' && (
+                                                    <span className="text-emerald-500 font-bold text-xs flex items-center gap-1">
+                                                        <CheckCircle2 size={16} />
+                                                        Concluido
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="p-12 text-center text-gray-500">
+                            Nenhuma fatura encontrada.
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* PIX QR Code Modal */}
+            {selectedTxForPix && (
+                <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm p-8 text-center animate-in zoom-in duration-300">
+                        <h3 className="text-2xl font-bold text-slate-800 mb-2">Pagamento via PIX</h3>
+                        <p className="text-sm text-slate-500 mb-6">Escaneie o código abaixo no app do seu banco</p>
+
+                        <div className="bg-slate-50 p-6 rounded-3xl mb-6 flex justify-center border-2 border-slate-100">
+                            {selectedTxForPix.pixQrCodeBase64 ? (
+                                <img
+                                    src={`data:image/png;base64,${selectedTxForPix.pixQrCodeBase64}`}
+                                    alt="PIX QR Code"
+                                    className="w-48 h-48"
+                                />
+                            ) : (
+                                <div className="w-48 h-48 bg-slate-200 rounded-xl animate-pulse flex items-center justify-center text-slate-400">
+                                    QR Code não disponível
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-3">
+                            <button
+                                onClick={() => {
+                                    if (selectedTxForPix.pixQrCode) {
+                                        navigator.clipboard.writeText(selectedTxForPix.pixQrCode);
+                                        alert('Código PIX Copiado!');
+                                    }
+                                }}
+                                className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                            >
+                                <Copy size={20} />
+                                Copiar Código PIX
+                            </button>
+                            <button
+                                onClick={() => setSelectedTxForPix(null)}
+                                className="w-full py-4 text-slate-500 font-bold hover:text-slate-800 transition-colors"
+                            >
+                                Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Help Section */}

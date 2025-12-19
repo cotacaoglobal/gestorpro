@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
 import { Bell, AlertTriangle, Mail, MessageSquare, Save } from 'lucide-react';
 import { User } from '../types';
+import { EmailService } from '../services/emailService';
+import { EmailNotificationSettings } from './EmailNotificationSettings';
 
 interface NotificationSettings {
     lowStockAlert: boolean;
@@ -100,7 +101,10 @@ export const Notifications: React.FC<NotificationsProps> = ({ user }) => {
                     </div>
                 </div>
 
-                {/* Notificações por E-mail */}
+                {/* Configurações de Email (Supabase) */}
+                <EmailNotificationSettings user={user} />
+
+                {/* Notificações por E-mail (Local) */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
@@ -127,15 +131,51 @@ export const Notifications: React.FC<NotificationsProps> = ({ user }) => {
                         </label>
 
                         {settings.emailNotifications && (
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">E-mail para notificações</label>
-                                <input
-                                    type="email"
-                                    value={settings.notificationEmail}
-                                    onChange={(e) => setSettings({ ...settings, notificationEmail: e.target.value })}
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 font-medium"
-                                    placeholder="seuemail@exemplo.com"
-                                />
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">E-mail para notificações</label>
+                                    <input
+                                        type="email"
+                                        value={settings.notificationEmail}
+                                        onChange={(e) => setSettings({ ...settings, notificationEmail: e.target.value })}
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 font-medium"
+                                        placeholder="seuemail@exemplo.com"
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={async () => {
+                                        if (!settings.notificationEmail) {
+                                            alert('Insira um email primeiro!');
+                                            return;
+                                        }
+                                        const btn = document.activeElement as HTMLButtonElement;
+                                        const originalText = btn.innerText;
+                                        btn.innerText = 'Enviando...';
+                                        btn.disabled = true;
+
+                                        try {
+                                            const result = await EmailService.sendEmail({
+                                                to: settings.notificationEmail,
+                                                subject: 'Teste de Notificação - Gestor Pro',
+                                                html: `
+                                                    <h1>Teste de Configuração</h1>
+                                                    <p>Este é um email de teste enviado para confirmar que suas notificações estão funcionando corretamente.</p>
+                                                    <p>Enviado em: ${new Date().toLocaleString('pt-BR')}</p>
+                                                `
+                                            });
+                                            if (result.success) alert('✅ Email de teste enviado!');
+                                            else alert('❌ Falha: ' + result.error);
+                                        } finally {
+                                            btn.innerText = originalText;
+                                            btn.disabled = false;
+                                        }
+                                    }}
+                                    className="py-2.5 px-6 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors flex items-center gap-2"
+                                >
+                                    <Mail size={18} />
+                                    Enviar Email de Teste
+                                </button>
                             </div>
                         )}
                     </div>

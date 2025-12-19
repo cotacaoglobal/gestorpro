@@ -1,24 +1,57 @@
 import React, { useState, useRef } from 'react';
-import { X, Download, Share2, MessageCircle, Mail, FileText, Image as ImageIcon, FileCheck, Printer } from 'lucide-react';
+import { X, Download, Share2, MessageCircle, Mail, FileText, Image as ImageIcon, FileCheck, Printer, Check } from 'lucide-react';
 import { Sale } from '../types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { ThermalPrintService } from '../services/thermalPrintService';
+import { EmailService } from '../services/emailService';
 
 interface SaleSuccessModalProps {
     sale: Sale;
     onClose: () => void;
     onNewClient: () => void;
+    storeName?: string;
 }
 
 type ShareFormat = 'text' | 'image' | 'pdf';
 
-export const SaleSuccessModal: React.FC<SaleSuccessModalProps> = ({ sale, onClose, onNewClient }) => {
+export const SaleSuccessModal: React.FC<SaleSuccessModalProps> = ({ sale, onClose, onNewClient, storeName = 'Gestor Pro' }) => {
     const [showShareOptions, setShowShareOptions] = useState(false);
     const [showWhatsAppInput, setShowWhatsAppInput] = useState(false);
+    const [showEmailInput, setShowEmailInput] = useState(false);
     const [phoneNumber, setPhoneNumber] = useState('');
+    const [email, setEmail] = useState('');
+    const [isSendingEmail, setIsSendingEmail] = useState(false);
+    const [emailSent, setEmailSent] = useState(false);
     const [selectedFormat, setSelectedFormat] = useState<ShareFormat>('text');
     const receiptRef = useRef<HTMLDivElement>(null);
+
+    const handleSendEmail = async () => {
+        if (!email.includes('@')) {
+            alert('Por favor, insira um email válido');
+            return;
+        }
+
+        setIsSendingEmail(true);
+        try {
+            const result = await EmailService.sendSaleConfirmation(sale, email, storeName || 'Nossa Loja');
+            if (result.success) {
+                setEmailSent(true);
+                setTimeout(() => {
+                    setShowEmailInput(false);
+                    setShowShareOptions(false);
+                    setEmailSent(false);
+                }, 2000);
+            } else {
+                alert('Erro ao enviar email: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Erro no fluxo de email:', error);
+            alert('Ocorreu um erro ao processar o envio do email.');
+        } finally {
+            setIsSendingEmail(false);
+        }
+    };
 
     const formatPhone = (value: string) => {
         const numbers = value.replace(/\D/g, '');
@@ -326,17 +359,27 @@ export const SaleSuccessModal: React.FC<SaleSuccessModalProps> = ({ sale, onClos
                             </div>
                         )}
 
-                        {showShareOptions && !showWhatsAppInput && (
+                        {showShareOptions && !showWhatsAppInput && !showEmailInput && (
                             <div className="space-y-3 animate-in slide-in-from-right duration-300">
                                 <h3 className="font-bold text-slate-700 mb-4">Como deseja compartilhar?</h3>
 
-                                <button
-                                    onClick={() => setShowWhatsAppInput(true)}
-                                    className="w-full py-4 rounded-xl font-bold bg-green-500 text-white hover:bg-green-600 transition-colors flex items-center justify-center gap-3"
-                                >
-                                    <MessageCircle size={20} />
-                                    Enviar por WhatsApp
-                                </button>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        onClick={() => setShowWhatsAppInput(true)}
+                                        className="py-4 rounded-xl font-bold bg-green-500 text-white hover:bg-green-600 transition-colors flex flex-col items-center justify-center gap-2"
+                                    >
+                                        <MessageCircle size={24} />
+                                        <span>WhatsApp</span>
+                                    </button>
+
+                                    <button
+                                        onClick={() => setShowEmailInput(true)}
+                                        className="py-4 rounded-xl font-bold bg-amber-500 text-white hover:bg-amber-600 transition-colors flex flex-col items-center justify-center gap-2"
+                                    >
+                                        <Mail size={24} />
+                                        <span>Email</span>
+                                    </button>
+                                </div>
 
                                 <button
                                     onClick={() => ThermalPrintService.printReceipt(sale)}
@@ -368,6 +411,66 @@ export const SaleSuccessModal: React.FC<SaleSuccessModalProps> = ({ sale, onClos
                                 >
                                     Voltar
                                 </button>
+                            </div>
+                        )}
+
+                        {showEmailInput && (
+                            <div className="space-y-4 animate-in slide-in-from-right duration-300">
+                                <h3 className="font-bold text-slate-700 mb-2">Enviar Comprovante por Email</h3>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-600 mb-2">
+                                        Email do Cliente
+                                    </label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            placeholder="cliente@email.com"
+                                            className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:border-amber-500 outline-none font-medium text-slate-700"
+                                            autoFocus
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setShowEmailInput(false)}
+                                        className="flex-1 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-colors"
+                                        disabled={isSendingEmail}
+                                    >
+                                        Voltar
+                                    </button>
+                                    <button
+                                        onClick={handleSendEmail}
+                                        disabled={isSendingEmail || emailSent}
+                                        className={`flex-[2] py-3 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 
+                                            ${emailSent
+                                                ? 'bg-emerald-500'
+                                                : 'bg-amber-500 hover:bg-amber-600 active:scale-95'
+                                            } 
+                                            disabled:opacity-70 disabled:cursor-not-allowed`}
+                                    >
+                                        {isSendingEmail ? (
+                                            <>
+                                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                Enviando...
+                                            </>
+                                        ) : emailSent ? (
+                                            <>
+                                                <Check size={18} />
+                                                Enviado!
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Mail size={18} />
+                                                Enviar Email
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         )}
 
