@@ -15,6 +15,8 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onRegister }) => {
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [recoveryEmail, setRecoveryEmail] = useState('');
   const [recoverySuccess, setRecoverySuccess] = useState(false);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [recoveryError, setRecoveryError] = useState('');
   const [logoutReason, setLogoutReason] = useState('');
 
   // Verificar se há mensagem de bloqueio ao montar componente
@@ -56,22 +58,26 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onRegister }) => {
 
   const handlePasswordRecovery = async (e: React.FormEvent) => {
     e.preventDefault();
+    setRecoveryError('');
+    setRecoveryLoading(true);
+
     try {
-      // Mock simulation of success for now
-      // In a real multi-tenant system, we'd need a dedicated endpoint to check user by email globally safely
       if (recoveryEmail && recoveryEmail.includes('@')) {
-        setRecoverySuccess(true);
-        setTimeout(() => {
-          setShowRecoveryModal(false);
-          setRecoverySuccess(false);
-          setRecoveryEmail('');
-        }, 3000);
+        const { success, error } = await SupabaseService.sendPasswordResetEmail(recoveryEmail);
+
+        if (success) {
+          setRecoverySuccess(true);
+        } else {
+          setRecoveryError(error || 'Erro ao enviar email de recuperação.');
+        }
       } else {
-        alert('Por favor, insira um email válido.');
+        setRecoveryError('Por favor, insira um email válido.');
       }
     } catch (error) {
       console.error('Recovery error:', error);
-      alert('Erro ao processar solicitação.');
+      setRecoveryError('Erro ao processar solicitação.');
+    } finally {
+      setRecoveryLoading(false);
     }
   };
 
@@ -273,6 +279,12 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onRegister }) => {
                   Digite seu email de administrador para receber instruções de recuperação de senha.
                 </p>
 
+                {recoveryError && (
+                  <div className="bg-rose-50 text-rose-600 px-4 py-3 rounded-xl text-xs font-bold border border-rose-100">
+                    {recoveryError}
+                  </div>
+                )}
+
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-500 uppercase ml-1">Email do Administrador</label>
                   <div className="relative group">
@@ -291,19 +303,22 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onRegister }) => {
                 <div className="flex gap-3">
                   <button
                     type="button"
+                    disabled={recoveryLoading}
                     onClick={() => {
                       setShowRecoveryModal(false);
                       setRecoveryEmail('');
+                      setRecoveryError('');
                     }}
-                    className="flex-1 py-3 text-slate-600 hover:bg-slate-50 rounded-2xl font-bold transition-colors"
+                    className="flex-1 py-3 text-slate-600 hover:bg-slate-50 rounded-2xl font-bold transition-colors disabled:opacity-50"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-3 bg-violet-600 text-white hover:bg-violet-700 rounded-2xl font-bold shadow-lg shadow-violet-200 transition-all"
+                    disabled={recoveryLoading}
+                    className="flex-1 py-3 bg-violet-600 text-white hover:bg-violet-700 rounded-2xl font-bold shadow-lg shadow-violet-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    Enviar
+                    {recoveryLoading ? 'Enviando...' : 'Enviar'}
                   </button>
                 </div>
               </form>

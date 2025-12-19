@@ -8,6 +8,7 @@ import { SalesHistory } from './components/SalesHistory';
 import { Login } from './components/Login';
 import { OperatorHome } from './components/OperatorHome';
 import { AdminUsers } from './components/AdminUsers';
+import { ResetPassword } from './components/ResetPassword';
 import { CashManagement } from './components/CashManagement';
 import { DuplicateCleanup } from './components/DuplicateCleanup';
 import { StoreSettings } from './components/StoreSettings';
@@ -67,6 +68,11 @@ const App: React.FC = () => {
 
     // 2. Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setView('RESET_PASSWORD');
+        navigate('/reset-password');
+      }
+
       // Only handle SIGN_IN/OUT here to avoid conflicting with initial load
       if (event === 'SIGNED_OUT') {
         setUser(null);
@@ -113,6 +119,8 @@ const App: React.FC = () => {
       setView('LOGIN');
     } else if (path === '/register') {
       setView('REGISTER');
+    } else if (path === '/reset-password') {
+      setView('RESET_PASSWORD');
     } else if (path === '/dashboard') {
       setView('DASHBOARD');
     } else if (path === '/inventory') {
@@ -215,6 +223,7 @@ const App: React.FC = () => {
     const pathMap: Record<ViewState, string> = {
       'LOGIN': '/login',
       'REGISTER': '/register',
+      'RESET_PASSWORD': '/reset-password',
       'DASHBOARD': '/dashboard',
       'INVENTORY': '/inventory',
       'HISTORY': '/history',
@@ -277,6 +286,15 @@ const App: React.FC = () => {
           navigate('/login');
           alert('Conta criada com sucesso! Por favor, faça login.');
         }}
+      />
+    );
+  }
+
+  if (view === 'RESET_PASSWORD') {
+    return (
+      <ResetPassword
+        onSuccess={() => { setView('LOGIN'); navigate('/login'); }}
+        onCancel={() => { setView('LOGIN'); navigate('/login'); }}
       />
     );
   }

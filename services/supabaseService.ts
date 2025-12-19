@@ -384,6 +384,32 @@ export const SupabaseService = {
         if (error) console.error('Error logging out:', error);
     },
 
+    sendPasswordResetEmail: async (email: string): Promise<{ success: boolean; error?: string }> => {
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/reset-password`,
+            });
+            if (error) throw error;
+            return { success: true };
+        } catch (error: any) {
+            console.error('Error sending reset email:', error.message);
+            return { success: false, error: error.message };
+        }
+    },
+
+    updatePassword: async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
+        try {
+            const { error } = await supabase.auth.updateUser({
+                password: newPassword
+            });
+            if (error) throw error;
+            return { success: true };
+        } catch (error: any) {
+            console.error('Error updating password:', error.message);
+            return { success: false, error: error.message };
+        }
+    },
+
     getCurrentUser: async (): Promise<User | null> => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return null;
