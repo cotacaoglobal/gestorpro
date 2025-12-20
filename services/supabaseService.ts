@@ -314,6 +314,43 @@ export const SupabaseService = {
         };
     },
 
+    registerOperator: async (
+        name: string,
+        email: string,
+        password: string,
+        role: string,
+        tenantId: string
+    ): Promise<{ success: boolean; user?: User; error?: string }> => {
+        try {
+            const { data, error } = await supabase.functions.invoke('admin-add-user', {
+                body: { name, email, password, role, tenantId },
+            });
+
+            if (error) {
+                console.error('Edge function error:', error);
+                return { success: false, error: error.message };
+            }
+
+            if (data?.error) return { success: false, error: data.error };
+
+            return {
+                success: true,
+                user: {
+                    id: data.user.id,
+                    tenantId: data.user.tenant_id,
+                    name: data.user.name,
+                    email: data.user.email,
+                    passwordHash: '',
+                    role: data.user.role,
+                    avatar: data.user.avatar,
+                }
+            };
+        } catch (error: any) {
+            console.error('Error in registerOperator:', error);
+            return { success: false, error: error.message };
+        }
+    },
+
     updateUser: async (updatedUser: User): Promise<User> => {
         const { data, error } = await supabase
             .from('users')

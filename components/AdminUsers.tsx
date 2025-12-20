@@ -23,20 +23,27 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({ user }) => {
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const userToAdd: Omit<User, 'id'> = {
-        tenantId: user.tenantId,
-        name: newUser.name,
-        email: newUser.email,
-        passwordHash: newUser.password,
-        role: newUser.role
-      };
-      const createdUser = await SupabaseService.addUser(userToAdd);
-      setUsers([...users, createdUser]);
-      setNewUser({ name: '', email: '', password: '', role: 'operator' });
-      alert('Usuário criado!');
+      if (!user?.tenantId) return;
+
+      const result = await SupabaseService.registerOperator(
+        newUser.name,
+        newUser.email,
+        newUser.password,
+        newUser.role,
+        user.tenantId
+      );
+
+      if (result.success && result.user) {
+        setUsers([...users, result.user]);
+        setNewUser({ name: '', email: '', password: '', role: 'operator' });
+        alert('Usuário criado e habilitado para login!');
+      } else {
+        console.error('Error adding user:', result.error);
+        alert('Erro ao criar usuário: ' + (result.error || 'Erro desconhecido'));
+      }
     } catch (error) {
       console.error('Error adding user:', error);
-      alert('Erro ao criar usuário');
+      alert('Erro inesperado ao criar usuário');
     }
   };
 
