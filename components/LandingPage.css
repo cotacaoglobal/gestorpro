@@ -1512,3 +1512,272 @@
 .h-8 {
   height: 2rem;
 }
+
+/* =====================================================
+   PLANS SECTION - NEW STYLES WITH INVOICE BADGES
+   ===================================================== */
+
+.lp-plans {
+  padding: 100px 2rem;
+  background: linear-gradient(180deg, var(--lp-bg) 0%, white 50%, var(--lp-bg) 100%);
+}
+
+.lp-plans-grid-5 {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.5rem;
+}
+
+.lp-plan-card {
+  background: white;
+  border-radius: 24px;
+  padding: 2rem;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.lp-plan-card:hover {
+  border-color: var(--lp-primary);
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(124, 58, 237, 0.15);
+}
+
+.lp-plan-card.popular {
+  border-color: var(--lp-primary);
+  box-shadow: 0 10px 40px rgba(124, 58, 237, 0.2);
+  transform: scale(1.02);
+}
+
+.lp-plan-card.enterprise {
+  border-color: #0ea5e9;
+}
+
+.lp-plan-card.unlimited {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+  border-color: transparent;
+  color: white;
+}
+
+.lp-plan-card h3 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  color: var(--lp-text);
+}
+
+.lp-plan-card.unlimited h3 {
+  color: white;
+}
+
+.lp-plan-price {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--lp-primary);
+  margin-bottom: 0.5rem;
+}
+
+.lp-plan-card.unlimited .lp-plan-price {
+  color: #a78bfa;
+}
+
+.lp-plan-price span {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--lp-text-muted);
+}
+
+.lp-plan-card.unlimited .lp-plan-price span {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.lp-plan-desc {
+  color: var(--lp-text-muted);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.lp-plan-card.unlimited .lp-plan-desc {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Invoice Badges */
+.lp-plan-invoice-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 1.5rem;
+}
+
+.lp-plan-invoice-badge.none {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.lp-plan-invoice-badge.basic {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.lp-plan-invoice-badge.pro {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.lp-plan-invoice-badge.enterprise {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.lp-plan-invoice-badge.unlimited {
+  background: rgba(167, 139, 250, 0.2);
+  color: #a78bfa;
+}
+
+/* Plan Features */
+.lp-plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.lp-plan-features li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--lp-text);
+}
+
+.lp-plan-card.unlimited .lp-plan-features li {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.lp-plan-features li svg {
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.lp-plan-features .lp-plan-overage {
+  color: #f59e0b;
+  font-weight: 600;
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.lp-plan-card.unlimited .lp-plan-features .lp-plan-overage {
+  border-top-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Plan Tags */
+.lp-plan-popular-tag,
+.lp-plan-premium-tag,
+.lp-plan-unlimited-tag {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.lp-plan-popular-tag {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white;
+}
+
+.lp-plan-premium-tag {
+  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+  color: white;
+}
+
+.lp-plan-unlimited-tag {
+  background: linear-gradient(135deg, #f97316, #fbbf24);
+  color: white;
+}
+
+/* Plan Buttons */
+.lp-plan-card .lp-btn-primary.full,
+.lp-plan-card .lp-btn-outline.full {
+  width: 100%;
+  justify-content: center;
+  margin-top: auto;
+}
+
+.lp-plan-card.unlimited .lp-btn-primary {
+  background: white;
+  color: #312e81;
+}
+
+.lp-plan-card.unlimited .lp-btn-primary:hover {
+  background: #f8fafc;
+}
+
+/* Plans Note */
+.lp-plans-note {
+  max-width: 800px;
+  margin: 3rem auto 0;
+  text-align: center;
+  color: var(--lp-text-muted);
+  font-size: 0.875rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Responsive Plans */
+@media (max-width: 1280px) {
+  .lp-plans-grid-5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .lp-plan-card.popular {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 900px) {
+  .lp-plans-grid-5 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .lp-plan-card.popular {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .lp-plans-grid-5 {
+    grid-template-columns: 1fr;
+    max-width: 400px;
+  }
+
+  .lp-plan-card {
+    padding: 1.5rem;
+  }
+
+  .lp-plan-price {
+    font-size: 2rem;
+  }
+}

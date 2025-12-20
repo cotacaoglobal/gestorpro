@@ -343,6 +343,18 @@ export const SaleSuccessModal: React.FC<SaleSuccessModalProps> = ({ sale, onClos
                                     Compartilhar Comprovante
                                 </button>
 
+                                {/* Botão Emitir Nota - Preparado para integração futura */}
+                                <button
+                                    onClick={() => {
+                                        // TODO: Integrar com InvoiceManager quando implementar nota a partir de venda
+                                        alert('Para emitir nota fiscal desta venda, acesse o menu "Notas Fiscais" e clique em "Emitir Nota".\n\nEm breve: emissão direta a partir da venda!');
+                                    }}
+                                    className="w-full py-4 rounded-xl font-bold bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-3"
+                                >
+                                    <FileCheck size={20} />
+                                    Emitir Nota Fiscal
+                                </button>
+
                                 <button
                                     onClick={onNewClient}
                                     className="w-full py-4 rounded-xl font-bold bg-violet-500 text-white hover:bg-violet-600 transition-colors flex items-center justify-center gap-3"
@@ -358,6 +370,7 @@ export const SaleSuccessModal: React.FC<SaleSuccessModalProps> = ({ sale, onClos
                                 </button>
                             </div>
                         )}
+
 
                         {showShareOptions && !showWhatsAppInput && !showEmailInput && (
                             <div className="space-y-3 animate-in slide-in-from-right duration-300">

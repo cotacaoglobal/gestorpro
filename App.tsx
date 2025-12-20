@@ -31,6 +31,8 @@ import { AdminLogs } from './components/admin/AdminLogs';
 import { AdminMetrics } from './components/admin/AdminMetrics';
 import { TenantSubscriptionPanel } from './components/TenantSubscriptionPanel';
 import LandingPage from './components/LandingPage';
+import InvoiceManager from './components/InvoiceManager';
+import TefManager from './components/TefManager';
 
 const App: React.FC = () => {
   const navigate = useNavigate();
@@ -146,6 +148,10 @@ const App: React.FC = () => {
       setView('MANAGE_CATEGORIES');
     } else if (path === '/settings/notifications') {
       setView('NOTIFICATIONS');
+    } else if (path === '/invoices') {
+      setView('INVOICES');
+    } else if (path === '/tef') {
+      setView('TEF');
     } else if (path.startsWith('/admin')) {
       if (path.includes('/tenants')) setView('ADMIN_TENANTS');
       else if (path.includes('/plans')) setView('ADMIN_PLANS');
@@ -241,6 +247,8 @@ const App: React.FC = () => {
       'BACKUP_DATA': '/settings/backup',
       'MANAGE_CATEGORIES': '/settings/categories',
       'NOTIFICATIONS': '/settings/notifications',
+      'INVOICES': '/invoices',
+      'TEF': '/tef',
       'SUBSCRIPTION': '/subscription',
       'ADMIN_DASHBOARD': '/admin/dashboard',
       'ADMIN_TENANTS': '/admin/tenants',
@@ -377,6 +385,8 @@ const App: React.FC = () => {
         {view === 'BACKUP_DATA' && <BackupData user={user} />}
         {view === 'MANAGE_CATEGORIES' && <ManageCategories user={user} />}
         {view === 'NOTIFICATIONS' && <Notifications user={user} />}
+        {view === 'INVOICES' && <InvoiceManager user={user} />}
+        {view === 'TEF' && <TefManager user={user} />}
         {view === 'SUBSCRIPTION' && <TenantSubscriptionPanel user={user} />}
       </main>
 

@@ -274,7 +274,7 @@ const LandingPage: React.FC = () => {
             </p>
             <ul className="lp-feature-list">
               <li><CheckCircle2 className="w-5 h-5 text-violet-500" /> Vendas via Código de Barras ou Busca</li>
-              <li><CheckCircle2 className="w-5 h-5 text-violet-500" /> Pix, Cartão, Dinheiro e Fiado</li>
+              <li><CheckCircle2 className="w-5 h-5 text-violet-500" /> Pix, Cartão, Dinheiro</li>
               <li><CheckCircle2 className="w-5 h-5 text-violet-500" /> Carrinho visual com edição rápida</li>
               <li><CheckCircle2 className="w-5 h-5 text-violet-500" /> Impressão de cupom automática</li>
             </ul>
@@ -525,58 +525,109 @@ const LandingPage: React.FC = () => {
       {/* Plans Section */}
       <section id="plans" className="lp-plans">
         <div className="lp-section-header">
-          <h2 className="lp-section-title">Planos que cabem no seu bolso</h2>
-          <p className="lp-section-subtitle">Escolha o ideal para o tamanho do seu negócio. Sem fidelidade!</p>
+          <h2 className="lp-section-title">Planos que <span>cabem no seu bolso</span></h2>
+          <p className="lp-section-subtitle">Escolha o ideal para o tamanho do seu negócio. Sem fidelidade, cancele quando quiser!</p>
         </div>
 
-        <div className="lp-plans-grid">
+        <div className="lp-plans-grid-5">
+          {/* STARTER */}
           <div className="lp-plan-card">
-            <h3>Grátis</h3>
-            <div className="lp-plan-price">R$ 0<span>/mês</span></div>
-            <p>Ideal para testar todas as funcionalidades</p>
+            <h3>Starter</h3>
+            <div className="lp-plan-price">R$ 49,90<span>/mês</span></div>
+            <p className="lp-plan-desc">Para quem está começando</p>
+            <div className="lp-plan-invoice-badge none">Sem NF-e</div>
             <ul className="lp-plan-features">
-              <li><CheckCircle2 className="w-4 h-4" /> 2 usuários</li>
-              <li><CheckCircle2 className="w-4 h-4" /> 50 produtos</li>
-              <li><CheckCircle2 className="w-4 h-4" /> Relatórios básicos</li>
+              <li><CheckCircle2 className="w-4 h-4" /> 1 usuário</li>
+              <li><CheckCircle2 className="w-4 h-4" /> 100 produtos</li>
               <li><CheckCircle2 className="w-4 h-4" /> PDV completo</li>
-              <li><CheckCircle2 className="w-4 h-4" /> Suporte via comunidade</li>
+              <li><CheckCircle2 className="w-4 h-4" /> Relatórios básicos</li>
+              <li><CheckCircle2 className="w-4 h-4" /> Suporte por email</li>
             </ul>
-            <button onClick={() => navigate('/register')} className="lp-btn-outline full">Em breve</button>
+            <button onClick={() => navigate('/register')} className="lp-btn-outline full">Começar</button>
           </div>
 
+          {/* ESSENCIAL */}
+          <div className="lp-plan-card">
+            <h3>Essencial</h3>
+            <div className="lp-plan-price">R$ 79,90<span>/mês</span></div>
+            <p className="lp-plan-desc">Para pequenos negócios</p>
+            <div className="lp-plan-invoice-badge basic">50 notas/mês</div>
+            <ul className="lp-plan-features">
+              <li><CheckCircle2 className="w-4 h-4" /> 2 usuários</li>
+              <li><CheckCircle2 className="w-4 h-4" /> 500 produtos</li>
+              <li><CheckCircle2 className="w-4 h-4" /> PDV completo</li>
+              <li><CheckCircle2 className="w-4 h-4" /> Gestão de caixa</li>
+              <li><CheckCircle2 className="w-4 h-4" /> Impressão térmica</li>
+              <li><CheckCircle2 className="w-4 h-4" /> NF-e, NFC-e, NFS-e</li>
+              <li className="lp-plan-overage">+R$ 0,50/nota excedente</li>
+            </ul>
+            <button onClick={() => navigate('/register')} className="lp-btn-outline full">Começar</button>
+          </div>
+
+          {/* PROFISSIONAL - MAIS POPULAR */}
           <div className="lp-plan-card popular">
             <div className="lp-plan-popular-tag">Mais Popular</div>
-            <h3>Básico</h3>
-            <div className="lp-plan-price">R$ 69,90<span>/mês</span></div>
-            <p>Perfeito para negócios em crescimento</p>
+            <h3>Profissional</h3>
+            <div className="lp-plan-price">R$ 129,90<span>/mês</span></div>
+            <p className="lp-plan-desc">Para negócios em crescimento</p>
+            <div className="lp-plan-invoice-badge pro">200 notas/mês</div>
             <ul className="lp-plan-features">
               <li><CheckCircle2 className="w-4 h-4" /> 5 usuários</li>
-              <li><CheckCircle2 className="w-4 h-4" /> 500 produtos</li>
+              <li><CheckCircle2 className="w-4 h-4" /> 2.000 produtos</li>
               <li><CheckCircle2 className="w-4 h-4" /> Relatórios avançados</li>
-              <li><CheckCircle2 className="w-4 h-4" /> Gestão de caixa</li>
+              <li><CheckCircle2 className="w-4 h-4" /> Multi-formas pagamento</li>
               <li><CheckCircle2 className="w-4 h-4" /> Suporte prioritário</li>
-              <li><CheckCircle2 className="w-4 h-4" /> Impressão térmica</li>
+              <li><CheckCircle2 className="w-4 h-4" /> NF-e, NFC-e, NFS-e</li>
+              <li className="lp-plan-overage">+R$ 0,40/nota excedente</li>
             </ul>
             <button onClick={() => navigate('/register')} className="lp-btn-primary full">Assinar Agora</button>
           </div>
 
-          <div className="lp-plan-card">
-            <div className="lp-plan-premium-tag">Premium</div>
-            <h3>Profissional</h3>
-            <div className="lp-plan-price">R$ 99,90<span>/mês</span></div>
-            <p>Para quem precisa de controle total</p>
+          {/* EMPRESARIAL */}
+          <div className="lp-plan-card enterprise">
+            <div className="lp-plan-premium-tag">Recomendado</div>
+            <h3>Empresarial</h3>
+            <div className="lp-plan-price">R$ 199,90<span>/mês</span></div>
+            <p className="lp-plan-desc">Para alto volume de vendas</p>
+            <div className="lp-plan-invoice-badge enterprise">500 notas/mês</div>
             <ul className="lp-plan-features">
-              <li><CheckCircle2 className="w-4 h-4" /> 15 usuários</li>
-              <li><CheckCircle2 className="w-4 h-4" /> Produtos ilimitados</li>
-              <li><CheckCircle2 className="w-4 h-4" /> Vendas ilimitadas</li>
-              <li><CheckCircle2 className="w-4 h-4" /> Múltiplas lojas</li>
+              <li><CheckCircle2 className="w-4 h-4" /> 10 usuários</li>
+              <li><CheckCircle2 className="w-4 h-4" /> 10.000 produtos</li>
+              <li><CheckCircle2 className="w-4 h-4" /> Relatórios personalizados</li>
               <li><CheckCircle2 className="w-4 h-4" /> API de integração</li>
               <li><CheckCircle2 className="w-4 h-4" /> Suporte 24/7</li>
+              <li><CheckCircle2 className="w-4 h-4" /> Backup automático</li>
+              <li><CheckCircle2 className="w-4 h-4" /> NF-e, NFC-e, NFS-e, MDF-e</li>
+              <li className="lp-plan-overage">+R$ 0,30/nota excedente</li>
             </ul>
-            <button onClick={() => navigate('/register')} className="lp-btn-outline full">Falar com Consultor</button>
+            <button onClick={() => navigate('/register')} className="lp-btn-outline full">Começar</button>
+          </div>
+
+          {/* ILIMITADO */}
+          <div className="lp-plan-card unlimited">
+            <div className="lp-plan-unlimited-tag">Tudo Ilimitado</div>
+            <h3>Ilimitado</h3>
+            <div className="lp-plan-price">R$ 299,90<span>/mês</span></div>
+            <p className="lp-plan-desc">Sem limites para você crescer</p>
+            <div className="lp-plan-invoice-badge unlimited">∞ notas/mês</div>
+            <ul className="lp-plan-features">
+              <li><CheckCircle2 className="w-4 h-4" /> Usuários ilimitados</li>
+              <li><CheckCircle2 className="w-4 h-4" /> Produtos ilimitados</li>
+              <li><CheckCircle2 className="w-4 h-4" /> Notas ilimitadas</li>
+              <li><CheckCircle2 className="w-4 h-4" /> Gerente de conta</li>
+              <li><CheckCircle2 className="w-4 h-4" /> Treinamento personalizado</li>
+              <li><CheckCircle2 className="w-4 h-4" /> SLA 99.9%</li>
+              <li><CheckCircle2 className="w-4 h-4" /> Integração TEF</li>
+            </ul>
+            <button onClick={() => navigate('/register')} className="lp-btn-primary full">Falar com Consultor</button>
           </div>
         </div>
+
+        <p className="lp-plans-note">
+          Todos os planos incluem: PDV completo, controle de estoque, gestão de caixa e 7 dias grátis para testar.
+        </p>
       </section>
+
 
       {/* FAQ Section */}
       <section id="faq" className="lp-faq">
