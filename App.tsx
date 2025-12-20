@@ -30,6 +30,7 @@ import { AdminSettings } from './components/admin/AdminSettings';
 import { AdminLogs } from './components/admin/AdminLogs';
 import { AdminMetrics } from './components/admin/AdminMetrics';
 import { TenantSubscriptionPanel } from './components/TenantSubscriptionPanel';
+import LandingPage from './components/LandingPage';
 
 const App: React.FC = () => {
   const navigate = useNavigate();
@@ -115,7 +116,9 @@ const App: React.FC = () => {
   // Sync URL with view state
   useEffect(() => {
     const path = location.pathname;
-    if (path === '/' || path === '/login') {
+    if (path === '/') {
+      setView('LANDING_PAGE');
+    } else if (path === '/login') {
       setView('LOGIN');
     } else if (path === '/register') {
       setView('REGISTER');
@@ -221,6 +224,7 @@ const App: React.FC = () => {
     setHighlightLowStock(false);
     // Update URL based on view
     const pathMap: Record<ViewState, string> = {
+      'LANDING_PAGE': '/',
       'LOGIN': '/login',
       'REGISTER': '/register',
       'RESET_PASSWORD': '/reset-password',
@@ -276,6 +280,10 @@ const App: React.FC = () => {
   };
 
   if (loading) return <div className="flex h-screen items-center justify-center text-violet-500 font-bold bg-[#F3F5F9]">Carregando sistema...</div>;
+
+  if (view === 'LANDING_PAGE') {
+    return <LandingPage />;
+  }
 
   if (view === 'REGISTER') {
     return (
