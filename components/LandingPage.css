@@ -315,13 +315,15 @@
 }
 
 .lp-feature-icon-wrapper.purple {
-  background: #f5f3ff;
-  color: #7c3aed;
+  background: #f0ebff;
+  color: #6d28d9;
+  border: 1px solid rgba(124, 58, 237, 0.1);
 }
 
 .lp-feature-icon-wrapper.blue {
-  background: #eff6ff;
-  color: #3b82f6;
+  background: #e0efff;
+  color: #2563eb;
+  border: 1px solid rgba(59, 130, 246, 0.1);
 }
 
 .lp-feature-info h3 {
@@ -387,23 +389,27 @@
 }
 
 .lp-card-icon.green {
-  background: #f0fdf4;
-  color: #22c55e;
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid rgba(34, 197, 94, 0.1);
 }
 
 .lp-card-icon.orange {
-  background: #fff7ed;
-  color: #f97316;
+  background: #ffedd5;
+  color: #c2410c;
+  border: 1px solid rgba(249, 115, 22, 0.1);
 }
 
 .lp-card-icon.red {
-  background: #fef2f2;
-  color: #ef4444;
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid rgba(239, 68, 68, 0.1);
 }
 
 .lp-card-icon.violet {
-  background: #f5f3ff;
-  color: #8b5cf6;
+  background: #f3e8ff;
+  color: #7e22ce;
+  border: 1px solid rgba(139, 92, 246, 0.1);
 }
 
 .lp-feature-card h4 {
@@ -788,6 +794,29 @@
   .lp-footer-links {
     gap: 3rem;
     flex-direction: column;
+  }
+
+  /* Icon improvements for mobile */
+  .lp-feature-icon-wrapper {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+  }
+
+  .lp-feature-icon-wrapper svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .lp-card-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+  }
+
+  .lp-card-icon svg {
+    width: 28px;
+    height: 28px;
   }
 }
 

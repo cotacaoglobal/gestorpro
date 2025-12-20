@@ -17,14 +17,14 @@ import './LandingPage.css';
 
 // Image paths from the user uploads
 const IMAGES = {
-  hero: '/uploaded_image_0_1766192507437.png', // Dashboard
-  pos: '/uploaded_image_3_1766192938105.png', // Terminal de Vendas
-  inventory: '/uploaded_image_1_1766192507437.png', // Estoque
-  history: '/uploaded_image_2_1766192507437.png', // Histórico
-  cash: '/uploaded_image_3_1766192507437.png', // Caixa
-  users: '/uploaded_image_4_1766192507437.png', // Usuários
-  plans: '/uploaded_image_0_1766192938105.png', // Assinatura
-  paymentModal: '/uploaded_image_4_1766192938105.png' // Modal Pagamento
+  hero: '/landing_dashboard.png', // Novo Dashboard
+  pos: '/landing_pos.png', // Novo Terminal de Vendas
+  inventory: '/landing_inventory.png', // Novo Estoque
+  history: '/uploaded_image_2_1766192507437.png', // Mantido
+  cash: '/uploaded_image_3_1766192507437.png', // Mantido
+  users: '/uploaded_image_4_1766192507437.png', // Mantido
+  plans: '/uploaded_image_0_1766192938105.png', // Mantido
+  paymentModal: '/uploaded_image_4_1766192938105.png' // Mantido
 };
 
 const LandingPage: React.FC = () => {
