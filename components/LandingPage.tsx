@@ -8,6 +8,7 @@ import {
   Users,
   CreditCard,
   ArrowRight,
+  ChevronRight,
   CheckCircle2,
   Menu,
   X
